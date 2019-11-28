@@ -20,9 +20,11 @@ import com.zhouzhou.locationgaode.bean.SignTableInfo;
 public class DBHelper extends SQLiteOpenHelper {
 
     private Context mContext;
+    private static final String originName = "OriginName";
     private static final int VERSION = 1;
     private static final String CREATE_SIGN = "create table Sign(" + " id Integer primary key autoincrement," + " UserName text," + " UserPassword integer)";
-    private static final String CREATE_STATUS = "create table Status(" + " id Integer primary key autoincrement," + " Time text," + " Isin text," + " Isout text," + "Lat real," + " Lon real," + " TimeStart text," + "TimeStop)";
+    private static final String CREATE_STATUS = "create table Status(" + " id Integer primary key autoincrement," + " Time text," + " Radius text," + " Issign text," + " Lat real," + " Lon real," + " TimeStart text," + "TimeStop)";
+    private static final String CREATE_OIGINAL = "create table OriginStatus (" + " id Integer primary key autoincrement," + " Time text," + " Radius text," + " Issign text," + " Lat real," + " Lon real," + " TimeStart text," + "TimeStop)";
 
     public DBHelper(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory) {
         super(context, name, factory, VERSION);
@@ -33,15 +35,59 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_SIGN);
         db.execSQL(CREATE_STATUS);
+        db.execSQL(CREATE_OIGINAL);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("drop table if exists Sign");
         db.execSQL("drop table if exists Status");
+        db.execSQL("drop table if exists OriginStatus");
     }
-
-    //查询登录名是否存在
+    public String queryOriginName(SQLiteDatabase db) {
+        db = this.getReadableDatabase();
+        String result = "";
+        Cursor cursor = null;
+        try {
+            if (db != null) {
+                cursor = db.query("OriginStatus", new String[]{"UserName"}, "UserName = ?", new String[]{"originName"}, null, null, null);
+                if (cursor != null) {
+                    if (cursor.moveToNext()) {
+                        result = "true";
+                    } else {
+                        result = "查无此人";
+                    }
+                }
+            }
+        } catch (Exception e) {
+            result = e.getMessage();
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+    public Boolean addOriginData(SQLiteDatabase db, ContentValues values) {
+        db = this.getReadableDatabase();
+        Boolean isSuccess = false;
+        try {
+            db.insert("OriginStatus", null, values);
+            if (queryOriginName(db).equals("true")){
+                isSuccess = true;
+            }
+        } catch (Exception e) {
+        } finally {
+            db.close();
+        }
+        return isSuccess;
+    }
+    /*
+    *@Author: zhouzhou
+    *@Date: 2019/11/28
+    *@Deecribe：查询登录名是否存在
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
     public String queryName(SQLiteDatabase db, String name) {
         db = this.getReadableDatabase();
         String result = "";
@@ -60,12 +106,19 @@ public class DBHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             result = e.getMessage();
         } finally {
-                db.close();
+            db.close();
         }
         return result;
     }
 
-    //查询密码是否正确
+    /*
+    *@Author: zhouzhou
+    *@Date: 2019/11/28
+    *@Deecribe：查询密码是否正确
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
     public String queryPassword(SQLiteDatabase db, String password, String name) {
         db = this.getReadableDatabase();
         String result = "";
@@ -85,7 +138,7 @@ public class DBHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             result = e.getMessage();
         } finally {
-                db.close();
+            db.close();
         }
         return result;
     }
@@ -101,37 +154,38 @@ public class DBHelper extends SQLiteOpenHelper {
     public Boolean addUser(SQLiteDatabase db, ContentValues values) {
         db = this.getReadableDatabase();
         Boolean isSuccess = false;
-        try{
+        try {
             db.insert("Sign", null, values);
             if (queryName(db, values.get("UserName").toString()).equals("true")) {
                 isSuccess = true;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
 
-        }finally {
+        } finally {
             db.close();
         }
         return isSuccess;
     }
-/*
-*@Author: zhouzhou
-*@Date: 19-11-28
-*@Deecribe：添加设置数据
-*@Params:
-*@Return:
-*@Email：zhou.zhou@sim.com
-*/
-    public void addLatlng(SQLiteDatabase db, ContentValues values){
+
+    /*
+    *@Author: zhouzhou
+    *@Date: 19-11-28
+    *@Deecribe：添加设置数据
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    public void addLatlng(SQLiteDatabase db, ContentValues values) {
         db = this.getReadableDatabase();
         String result = "";
         Cursor cursor = null;
         try {
-            cursor = db.query("Status",null,"UserName = ?",new String[]{Constant.name},null,null,null);
-            if(!cursor.moveToNext()){
-                db.insert("Status",null,values);
+            cursor = db.query("Status", null, "UserName = ?", new String[]{Constant.name}, null, null, null);
+            if (!cursor.moveToNext()) {
+                db.insert("Status", null, values);
             }
-        }catch (Exception e){
-        }finally {
+        } catch (Exception e) {
+        } finally {
             db.close();
         }
 
@@ -145,30 +199,70 @@ public class DBHelper extends SQLiteOpenHelper {
     *@Return:
     *@Email：zhou.zhou@sim.com
     */
-    public void updateSettings(SQLiteDatabase db,SignTableInfo info){
+    public void updateSettings(SQLiteDatabase db, SignTableInfo info) {
         db = this.getReadableDatabase();
         Cursor cursor = null;
         ContentValues values = new ContentValues();
-        values.put("UserName",Constant.name);
-        values.put("Time",info.getTimeQuantum());
-        values.put("TimeStart",info.getTimeStart());
-        values.put("TimeStop",info.getTimeStop());
-        values.put("Lat",info.getLatitude());
-        values.put("Lng",info.getLongitude());
-        try{
-            cursor = db.query("Status",null,"UserName = ?",new String[]{Constant.name},null,null,null);
-            if(cursor.moveToNext()){
-                db.update("Status",values,"UserName = ?",new String[]{Constant.name});
-            }else{
-                addLatlng(db,values);
+        values.put("UserName", Constant.name);
+        values.put("Time", info.getTimeQuantum());
+        values.put("TimeStart", info.getTimeStart());
+        values.put("TimeStop", info.getTimeStop());
+        values.put("Lat", info.getLatitude());
+        values.put("Lng", info.getLongitude());
+        try {
+            cursor = db.query("Status", null, "UserName = ?", new String[]{Constant.name}, null, null, null);
+            if (cursor.moveToNext()) {
+                db.update("Status", values, "UserName = ?", new String[]{Constant.name});
+            } else {
+                addLatlng(db, values);
             }
-        }catch(Exception e){
+        } catch (Exception e) {
 
-        }finally {
+        } finally {
             db.close();
         }
 
     }
 
+    /*
+    *@Author: zhouzhou
+    *@Date: 2019/11/28
+    *@Deecribe：取数据
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    public SignTableInfo queryInfo(SQLiteDatabase db) {
+        SignTableInfo info = new SignTableInfo();
+        db = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.query("Status", new String[]{"Time", "Issign", "Lat", "Lng", "TimeStart", "TimeStop"}, "UserName = ?", new String[]{Constant.name}, null, null, null);
+            if (cursor.moveToNext()) {
+                info.setLatitude(Double.parseDouble(getString(cursor, "Lat")));
+                info.setLongitude(Double.parseDouble(getString(cursor, "Lng")));
+                info.setRadius(Double.parseDouble(getString(cursor, "Radius")));
+                info.setTimeQuantum(getString(cursor, "Time"));
+                info.setTimeStart(getString(cursor, "TimeStart"));
+                info.setTimeStop(getString(cursor, "TimeStop"));
+            }
+        } catch (Exception e) {
 
+        } finally {
+            db.close();
+        }
+        return info;
+    }
+
+    /*
+    *@Author: zhouzhou
+    *@Date: 2019/11/28
+    *@Deecribe：简化代码量
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    private String getString(Cursor cursor, String str) {
+        return cursor.getString(cursor.getColumnIndex(str));
+    }
 }

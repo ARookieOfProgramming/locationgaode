@@ -22,8 +22,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="10dp">
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/ll_setting_center"
@@ -32,33 +31,8 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/setting_center_point"
-                android:textColor="@color/settings_title"
-                android:drawableRight="@drawable/right"
-                android:textSize="18sp" />
-            <!--<LinearLayout-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:orientation="horizontal"-->
-            <!--android:layout_height="wrap_content">-->
-            <!--<TextView-->
-            <!--android:layout_width="0dp"-->
-            <!--android:layout_weight="1"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="@string/setting_center_point_input"-->
-            <!--android:textColor="@color/settings_text"-->
-            <!--android:textSize="15sp"-->
-            <!--/>-->
-            <!--<TextView-->
-            <!--android:layout_width="0dp"-->
-            <!--android:layout_weight="1"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="@string/setting_center_point_auto"-->
-            <!--android:textColor="@color/settings_text"-->
-            <!--android:textSize="15sp"-->
-            <!--/>-->
-            <!--</LinearLayout>-->
+                style="@style/myStyleX"
+                android:text="@string/setting_center_point" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -66,20 +40,14 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_setting_center_latitude"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    style="@style/myStyle"
                     android:text="@string/setting_center_latitude"
-                    android:textColor="@color/settings_text"
-                    android:textSize="15sp" />
-
+                    android:id="@+id/tv_setting_center_latitude"
+                    />
                 <TextView
+                    style="@style/myStyle"
                     android:id="@+id/tv_setting_center_longitude"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/setting_center_longitude"
-                    android:textColor="@color/settings_text"
-                    android:textSize="15sp" />
+                    android:text="@string/setting_center_longitude" />
             </LinearLayout>
 
         </LinearLayout>
@@ -92,12 +60,8 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/setting_distance"
-                android:textColor="@color/settings_title"
-                android:drawableRight="@drawable/right"
-                android:textSize="18sp" />
+                style="@style/myStyleX"
+                android:text="@string/setting_distance" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -105,14 +69,10 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    style="@style/myStyle"
                     android:id="@+id/tv_setting_radius"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
                     android:layout_weight="1"
-                    android:text="@string/setting_radius"
-                    android:textColor="@color/settings_text"
-                    android:textSize="15sp" />
+                    android:text="@string/setting_radius" />
 
                 <!--<TextView-->
                 <!--android:id="@+id/tv_setting_radius_unit"-->
@@ -135,21 +95,13 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/setting_time_notification"
-                android:drawableRight="@drawable/right"
-                android:textColor="@color/settings_title"
-                android:textSize="18sp" />
+                style="@style/myStyleX"
+                android:text="@string/setting_time_notification" />
 
             <TextView
                 android:id="@+id/tv_setting_time_notification_long"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:text="@string/setting_time_notification_long"
-                android:textColor="@color/settings_text"
-                android:textSize="15sp" />
+                style="@style/myStyle"
+                android:text="@string/setting_time_notification_long" />
 
         </LinearLayout>
 
@@ -161,53 +113,32 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/setting_time_auto"
-                android:textColor="@color/settings_title"
-                android:textSize="18sp" />
-
+                style="@style/myStyleX"
+                android:text="@string/setting_time_auto" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <TextView
+                    style="@style/myStyle"
                     android:id="@+id/tv_setting_time_auto_start"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:drawableRight="@drawable/right"
-                    android:text="@string/setting_time_auto_start"
-                    android:textColor="@color/settings_text"
-                    android:textSize="15sp" />
+                    android:text="@string/setting_time_auto_start" />
 
                 <TextView
                     android:id="@+id/tv_setting_time_auto_stop"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:padding="4dp"
-                    android:drawableRight="@drawable/right"
-                    android:text="@string/setting_time_auto_stop"
-                    android:textColor="@color/settings_text"
-                    android:background="@drawable/select_click"
-                    android:textSize="15sp" />
-
-
+                    style="@style/myStyle"
+                    android:text="@string/setting_time_auto_stop" />
             </LinearLayout>
 
         </LinearLayout>
 
         <TextView
             android:id="@+id/ll_setting_review"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            style="@style/myStyleX"
             android:layout_marginTop="20dp"
             android:text="@string/setting_review"
-            android:drawableRight="@drawable/right"
-            android:textColor="@color/settings_title"
-            android:textSize="18sp" />
+/>
     </LinearLayout>
 
     <Button

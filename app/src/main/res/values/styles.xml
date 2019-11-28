@@ -7,7 +7,24 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
-<style name="myStyle">
-    <item name=""
-</style>
+
+    <style name="myStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:drawableRight">@drawable/right</item>
+        <item name="android:textColor">@color/settings_text</item>
+        <item name="android:background">@drawable/select_click</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="myStyleX">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:drawableRight">@drawable/right</item>
+        <item name="android:background">@drawable/select_click</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/settings_title</item>
+    </style>
 </resources>

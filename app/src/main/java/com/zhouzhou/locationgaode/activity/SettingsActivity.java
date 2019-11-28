@@ -2,7 +2,9 @@ package com.zhouzhou.locationgaode.activity;
 
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -78,7 +80,8 @@ public class SettingsActivity extends AppCompatActivity {
      *@Email：zhou.zhou@sim.com
      */
     private void init() {
-
+        Cursor query = db.query("Status", new String[]{"Lat"}, "UserName = ?", new String[]{Constant.name}, null, null, null);
+        tvSettingCenterLatitude.setText(query.getString(query.getColumnIndex("Lat")));
     }
     @OnClick(R.id.ll_setting_center)
     public void onLlSettingCenterClicked() {
@@ -170,8 +173,6 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }).create().show();
     }
-
-
     /*
      *@Author: zhouzhou
      *@Date: 19-11-28
@@ -213,7 +214,7 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 double radius = Double.parseDouble(viewRadius.getText().toString());
-                tvSettingRadius.setText(R.string.app_name + viewRadius.getText() + " 米");
+                tvSettingRadius.setText(tvSettingRadius.getText().toString() + viewRadius.getText() + " 米");
                 info.setRadius(radius);
             }
         }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
