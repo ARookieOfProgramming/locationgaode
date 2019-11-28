@@ -1,3 +1,31 @@
 <resources>
-    <string name="app_name">LocationGaode</string>
+    <string name="app_name">打卡提醒</string>
+    <string name="login_name">打卡提醒App</string>
+    <string name="user_name">请输入用户名</string>
+    <string name="user_password">请输入密码</string>
+    <string name="login">登录</string>
+    <string name="login_forget">忘记密码</string>
+    <string name="login_register">注册用户</string>
+    <string name="login_agreement">用户协议</string>
+    <string name="password_confirm">请确认密码</string>
+    <string name="register">注册</string>
+
+    <string name="setting_center_point_input">手动输入</string>
+    <string name="setting_center_point_auto">地图标点</string>
+    <string name="setting_center_point">设置中心点</string>
+    <string name="setting_center_latitude">纬度:</string>
+    <string name="setting_center_longitude">经度:</string>
+
+    <string name="setting_distance">设置打卡距离</string>
+    <string name="setting_radius">半径:</string>
+    <string name="setting_radius_unit">米</string>
+    <string name="setting_time_notification">离开时间提醒</string>
+    <string name="setting_time_notification_long">时长:</string>
+    <string name="setting_time_auto">设置自检时间段</string>
+    <string name="setting_time_auto_start">开始时间:</string>
+    <string name="setting_time_auto_stop">结束时间:</string>
+
+    <string name="setting_review">恢复默认值</string>
+    <string name="setting_save">保存退出</string>
+
 </resources>

@@ -1,31 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/design_drawer_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context=".MapActivity">
+    android:clipToPadding="true"
+    android:fitsSystemWindows="true"
+    tools:context=".activity.MapActivity"
 
-    <Button
-        android:id="@+id/btn_map_show"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="设置围栏" />
-    <Button
-        android:id="@+id/btn_map_cancel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="确定" />
-    <TextView
-        android:id="@+id/tv_map_show"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="15sp"
-        android:text="1"
-        />
-    <com.amap.api.maps2d.MapView
-        android:id="@+id/map"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    >
 
-</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/colorPrimary"
+            android:theme="@style/Base.ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+        <com.amap.api.maps2d.MapView
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <android.support.design.widget.NavigationView
+        android:id="@+id/design_navigation_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@drawable/nav_view_background"
+        app:headerLayout="@layout/nav_head"
+        app:menu="@menu/menu_nav_view">
+
+    </android.support.design.widget.NavigationView>
+
+</android.support.v4.widget.DrawerLayout>

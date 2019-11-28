@@ -1,4 +1,4 @@
-package com.zhouzhou.locationgaode;
+package com.zhouzhou.locationgaode.activity;
 
 import android.Manifest;
 import android.app.Notification;
@@ -8,24 +8,29 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.PermissionChecker;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.TextView;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.amap.api.fence.GeoFence;
@@ -43,23 +48,21 @@ import com.amap.api.maps2d.model.Circle;
 import com.amap.api.maps2d.model.CircleOptions;
 import com.amap.api.maps2d.model.LatLng;
 import com.amap.api.maps2d.model.MyLocationStyle;
+import com.zhouzhou.locationgaode.R;
+import com.zhouzhou.locationgaode.bean.Constant;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import bean.Constant;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 import static com.amap.api.fence.GeoFenceClient.GEOFENCE_IN;
 import static com.amap.api.fence.GeoFenceClient.GEOFENCE_OUT;
@@ -70,14 +73,20 @@ public class MapActivity extends AppCompatActivity {
 
     @BindView(R.id.map)
     MapView map;
-    @BindView(R.id.btn_map_show)
-    Button btnMapShow;
-    @BindView(R.id.btn_map_cancel)
-    Button btnMapCancel;
-    @BindView(R.id.tv_map_show)
-    TextView tvMapShow;
+    //    @BindView(R.id.btn_map_show)
+    //    Button btnMapShow;
+    //    @BindView(R.id.btn_map_cancel)
+    //    Button btnMapCancel;
+    //    @BindView(R.id.tv_map_show)
+    //    TextView tvMapShow;
     //定义接收广播的action字符串
     public static final String GEOFENCE_BROADCAST_ACTION = "com.location.apis.geofencedemo.broadcast";
+    @BindView(R.id.toolbar)
+    Toolbar toolbar;
+    @BindView(R.id.design_navigation_view)
+    NavigationView designNavigationView;
+    @BindView(R.id.design_drawer_view)
+    DrawerLayout designDrawerView;
     private AMapLocationClient mLocationClient = null;//声明AMapLocationClient类对象
     private AMapLocationListener mLocationListener = new myAMapLocationListener();//声明定位回调监听器
     private Boolean isPassed = false;//权限通过
@@ -110,6 +119,7 @@ public class MapActivity extends AppCompatActivity {
         vibrator = (Vibrator) getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);//震动
         map.onCreate(savedInstanceState);//在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，创建地图
         init();
+        initToolBar();
     }
 
     private void init() {
@@ -127,6 +137,14 @@ public class MapActivity extends AppCompatActivity {
         // mLocationClient.startLocation();
     }
 
+    private void initToolBar() {
+        toolbar.setLogo(R.drawable.sign_in);
+        toolbar.setNavigationIcon(R.drawable.menu);
+        toolbar.setTitle("考勤打卡");
+        toolbar.setTitleTextColor(getResources().getColor(android.R.color.white));
+        setSupportActionBar(toolbar);
+        designNavigationView.setNavigationItemSelectedListener(new mYOnNavigationItemSelectedListener());
+    }
     /*
      *@Author: zhouzhou
      *@Date: 19-11-27
@@ -229,26 +247,26 @@ public class MapActivity extends AppCompatActivity {
     }
 
 
-    @OnClick(R.id.btn_map_show)
-    public void onBtnMapShowClicked() {
-
-//        try {
-//            unregisterReceiver(mGeoFenceReceiver);
-//        } catch (Exception e) {
-//
-//        } finally {
-//            isClicked = true;
-//        }
-        isClicked = true;
-    }
-
-    @OnClick(R.id.btn_map_cancel)
-    public void onBtnMapCancelClicked() {
-        isClicked = false;
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        filter.addAction(GEOFENCE_BROADCAST_ACTION);
-        registerReceiver(mGeoFenceReceiver, filter);
-    }
+    //    @OnClick(R.id.btn_map_show)
+    //    public void onBtnMapShowClicked() {
+    //
+    ////        try {
+    ////            unregisterReceiver(mGeoFenceReceiver);
+    ////        } catch (Exception e) {
+    ////
+    ////        } finally {
+    ////            isClicked = true;
+    ////        }
+    //        isClicked = true;
+    //    }
+    //
+    //    @OnClick(R.id.btn_map_cancel)
+    //    public void onBtnMapCancelClicked() {
+    //        isClicked = false;
+    //        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+    //        filter.addAction(GEOFENCE_BROADCAST_ACTION);
+    //        registerReceiver(mGeoFenceReceiver, filter);
+    //    }
 
     /*
      *@Author: zhouzhou
@@ -280,7 +298,7 @@ public class MapActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             AMapLocation aMapLocation = (AMapLocation) msg.obj;
-            tvMapShow.setText(aMapLocation.getLatitude() + "  " + aMapLocation.getLongitude() + "");
+            // tvMapShow.setText(aMapLocation.getLatitude() + "  " + aMapLocation.getLongitude() + "");
         }
     };
 
@@ -295,7 +313,7 @@ public class MapActivity extends AppCompatActivity {
     private AMapLocationClientOption setOption() {
         // if (mLocationOption == null) {
         mLocationOption = new AMapLocationClientOption();
-        mLocationOption.setLocationPurpose(AMapLocationClientOption.AMapLocationPurpose.Sport);
+        mLocationOption.setLocationPurpose(AMapLocationClientOption.AMapLocationPurpose.Transport);
         //设置定位模式为AMapLocationMode.Hight_Accuracy，高精度模式。
         //        mLocationOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
         //        mLocationOption.setSensorEnable(true);
@@ -363,11 +381,11 @@ public class MapActivity extends AppCompatActivity {
                         Toast.makeText(context, "进入地理围栏", Toast.LENGTH_SHORT).show();
                         //到达签到距离，提示签到
                         //vibrator.vibrate(1000);
-                        if (determineTime()){
+                        if (determineTime()) {
                             showNotification(Constant.IN);
                         }
-                        if (timer != null){
-                           timer.cancel();
+                        if (timer != null) {
+                            timer.cancel();
                         }
                         break;
                     case GEOFENCE_OUT:
@@ -397,7 +415,7 @@ public class MapActivity extends AppCompatActivity {
 
     private void showNotification(int type) {
         manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel notificationChannel = new NotificationChannel(Constant.ID, "b", NotificationManager.IMPORTANCE_DEFAULT);
             manager.createNotificationChannel(notificationChannel);
         }
@@ -431,27 +449,34 @@ public class MapActivity extends AppCompatActivity {
         }
     }
 
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-11-28
+     *@Deecribe：判断当前时间是否在时间段内
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
     private Boolean determineTime() {
-        boolean isTrue = false;
         LocalDateTime now = LocalDateTime.now();
-        GregorianCalendar gre=new GregorianCalendar();
-        Date date=new Date(now.getYear()-1900,now.getMonthValue()-1,now.getDayOfMonth()); //年要减去1900，月份是0-11
+        GregorianCalendar gre = new GregorianCalendar();
+        Date date = new Date(now.getYear() - 1900, now.getMonthValue() - 1, now.getDayOfMonth()); //年要减去1900，月份是0-11
         gre.setTime(date);
-        int weekday=gre.get(Calendar.DAY_OF_WEEK)-1; //0是星期天
-        if (weekday > 5){
+        int weekday = gre.get(Calendar.DAY_OF_WEEK) - 1; //0是星期天
+        if (weekday > 5) {
             return false;
         }
-        if (now.getHour() < 8 || now.getHour() >15){
+        if (now.getHour() < 8 || now.getHour() > 15) {
 
             Toast.makeText(this, now.getHour(), Toast.LENGTH_SHORT).show();
             return false;
         }
-
         return true;
     }
 
-    private  Timer timer = null;
-    private void timeCountNotification(){
+    private Timer timer = null;
+
+    private void timeCountNotification() {
         timer = new Timer();
         TimerTask task = new TimerTask() {
             @Override
@@ -460,20 +485,67 @@ public class MapActivity extends AppCompatActivity {
                 timer = null;
             }
         };
-        timer.schedule(task,0,5000);
+        timer.schedule(task, 0, 5000);
     }
 
-//    private void timeCountCancel(){
-//        timer2 = new Timer();
-//        TimerTask task = new TimerTask() {
-//
-//            @Override
-//            public void run() {
-//                timer1.cancel();
-//            }
-//        };
-//        timer2.schedule(task,0,4900);
-//    }
+    //    private void timeCountCancel(){
+    //        timer2 = new Timer();
+    //        TimerTask task = new TimerTask() {
+    //
+    //            @Override
+    //            public void run() {
+    //                timer1.cancel();
+    //            }
+    //        };
+    //        timer2.schedule(task,0,4900);
+    //    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_tool_bar, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+        switch (itemId) {
+            case R.id.action_location:
+                break;
+            case R.id.nav_action_center:
+                break;
+            case R.id.action_distance_sign_in:
+                break;
+            case R.id.action_distance_sign_out:
+                break;
+            case R.id.action_time_sign_out:
+                break;
+            case R.id.action_time_auto:
+                break;
+            case android.R.id.home:
+                designDrawerView.openDrawer(GravityCompat.START);
+                break;
+        }
+
+        return true;
+    }
+    private class mYOnNavigationItemSelectedListener implements NavigationView.OnNavigationItemSelectedListener {
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+            switch (menuItem.getItemId()){
+                case R.id.nav_view_settings:
+                    startActivity(new Intent(MapActivity.this,SettingsActivity.class));
+                    break;
+                case R.id.nav_view_about:
+                    Toast.makeText(MapActivity.this, "关于", Toast.LENGTH_SHORT).show();
+                    break;
+                case R.id.nav_view_login_out:
+                    startActivity(new Intent(MapActivity.this,LoginActivity.class));
+                    break;
+            }
+            return true;
+        }
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -487,7 +559,11 @@ public class MapActivity extends AppCompatActivity {
         if (mLocationClient != null) {
             mLocationClient.onDestroy();
         }
-        unregisterReceiver(mGeoFenceReceiver);
+        try {
+            unregisterReceiver(mGeoFenceReceiver);
+        } catch (Exception e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
