@@ -9,4 +9,6 @@
     <color name="settings_text">#1e1e1e</color>
     <color name="solidTrue">#cac4c4</color>
     <color name="solidFalse">#ffffff</color>
+    <color name="pressed">#57b3c1</color>
+    <color name="notPressed">#9ae1ec</color>
 </resources>

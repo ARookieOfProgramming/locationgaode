@@ -26,6 +26,7 @@
     <string name="setting_time_auto_stop">结束时间:</string>
 
     <string name="setting_review">恢复默认值</string>
-    <string name="setting_save">保存退出</string>
+    <string name="setting_save">保存</string>
+    <string name="setting_exist">退出</string>
 
 </resources>

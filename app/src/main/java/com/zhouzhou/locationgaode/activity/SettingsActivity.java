@@ -2,11 +2,13 @@ package com.zhouzhou.locationgaode.activity;
 
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.database.Cursor;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -22,7 +24,6 @@ import com.zhouzhou.locationgaode.bean.Constant;
 import com.zhouzhou.locationgaode.bean.SignTableInfo;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalTime;
 import java.util.Date;
 
 import butterknife.BindView;
@@ -55,11 +56,18 @@ public class SettingsActivity extends AppCompatActivity {
     TextView tvSettingTimeAutoStart;
     @BindView(R.id.tv_setting_time_auto_stop)
     TextView tvSettingTimeAutoStop;
+    @BindView(R.id.ll_settings_lat)
+    LinearLayout llSettingsLat;
+    @BindView(R.id.btn_settings_exist)
+    Button btnSettingsExist;
+    @BindView(R.id.ll_settings_notification)
+    LinearLayout llSettingsNotification;
+
 
     private DBHelper dbHelper = null;
     private SQLiteDatabase db = null;
-
     private SignTableInfo info = new SignTableInfo();
+    private final int requestCode = 8;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,22 +75,33 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
         ButterKnife.bind(this);
 
-        dbHelper = new DBHelper(this, "SignIn", null);
+        dbHelper = new DBHelper(this);
         init();
     }
 
     /*
      *@Author: zhouzhou
      *@Date: 19-11-28
-     *@Deecribe：恢复数据
+     *@Deecribe：恢复设置的数据
      *@Params:
      *@Return:
      *@Email：zhou.zhou@sim.com
      */
     private void init() {
-        Cursor query = db.query("Status", new String[]{"Lat"}, "UserName = ?", new String[]{Constant.name}, null, null, null);
-        tvSettingCenterLatitude.setText(query.getString(query.getColumnIndex("Lat")));
+        SignTableInfo tableInfo;
+        if (dbHelper.queryStatusName(db, Constant.name).equals("false")) {
+            tableInfo = dbHelper.queryInfo(db, dbHelper.originName);
+        } else {
+            tableInfo = dbHelper.queryInfo(db, Constant.name);
+        }
+        tvSettingCenterLatitude.setText("" + tableInfo.getLatitude());
+        tvSettingCenterLongitude.setText("" + tableInfo.getLongitude());
+        tvSettingRadius.setText("" + tableInfo.getRadius());
+        tvSettingTimeAutoStart.setText("" + tableInfo.getTimeStart());
+        tvSettingTimeAutoStop.setText("" + tableInfo.getTimeStop());
+        tvSettingTimeNotificationLong.setText("" + tableInfo.getTimeQuantum());
     }
+
     @OnClick(R.id.ll_setting_center)
     public void onLlSettingCenterClicked() {
         String[] choices = {"手动输入", "地图标点"};
@@ -95,10 +114,22 @@ public class SettingsActivity extends AppCompatActivity {
                 }
                 if (which == 1) {
                     //跳转到地图去标点，标完点回来
+                    startActivityForResult(new Intent(SettingsActivity.this,MapActivity.class).putExtra("request","request"),requestCode);
                     dialog.dismiss();
                 }
             }
         }).create().show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        Toast.makeText(this, "hah", Toast.LENGTH_SHORT).show();
+        if (requestCode == this.requestCode && resultCode == Constant.resultCode){
+            double[] latlngs = data.getDoubleArrayExtra("latlng");
+            tvSettingCenterLongitude.setText(latlngs[0]+"");
+            tvSettingCenterLatitude.setText(latlngs[1]+"");
+            Toast.makeText(this, "hah"+latlngs[0]+"", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @OnClick(R.id.ll_setting_radius)
@@ -113,12 +144,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     @OnClick(R.id.ll_setting_review)
     public void onLlSettingReviewClicked() {
-        Toast.makeText(this, "1", Toast.LENGTH_SHORT).show();
-    }
-
-    @OnClick(R.id.btn_settings_save)
-    public void onViewClicked() {
-        writeToDatabase();
+        handler.sendEmptyMessage(Constant.WHAT);
     }
     @OnClick(R.id.tv_setting_time_auto_start)
     public void onTvSettingTimeAutoStartClicked() {
@@ -130,6 +156,24 @@ public class SettingsActivity extends AppCompatActivity {
     public void onTvSettingTimeAutoStopClicked() {
         myTimePicker(Constant.TYPE3);
     }
+
+    @OnClick(R.id.btn_settings_save)
+    public void onBtnSettingsSaveClicked() {
+        //经纬度添加进info，等待保存
+        info.setLatitude(Double.parseDouble(tvSettingCenterLatitude.getText().toString()));
+        info.setLongitude(Double.parseDouble(tvSettingCenterLongitude.getText().toString()));
+        info.setRadius(Double.parseDouble(tvSettingRadius.getText().toString()));
+        info.setTimeQuantum(tvSettingTimeNotificationLong.getText().toString());
+        info.setTimeStart(tvSettingTimeAutoStart.getText().toString());
+        info.setTimeStop(tvSettingTimeAutoStop.getText().toString());
+        writeToDatabase();
+    }
+
+    @OnClick(R.id.btn_settings_exist)
+    public void onBtnSettingsExistClicked() {
+        finish();
+    }
+
     /*
      *@Author: zhouzhou
      *@Date: 19-11-28
@@ -151,12 +195,9 @@ public class SettingsActivity extends AppCompatActivity {
                     //判断输入是否合法
                     String result = inspectLatlng(lat, lng);
                     if (result.equals("true")) {
-                        //经纬度添加进info，等待保存
-                        info.setLatitude(lat);
-                        info.setLongitude(lng);
                         //展示输入的数据
-                        tvSettingCenterLatitude.setText(tvSettingCenterLatitude.getText().toString() + et_lat.getText());
-                        tvSettingCenterLongitude.setText(tvSettingCenterLongitude.getText().toString() + et_lng.getText());
+                        tvSettingCenterLatitude.setText(et_lat.getText());
+                        tvSettingCenterLongitude.setText(et_lng.getText());
                     } else {
                         Toast.makeText(SettingsActivity.this, result, Toast.LENGTH_SHORT).show();
                     }
@@ -173,6 +214,7 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }).create().show();
     }
+
     /*
      *@Author: zhouzhou
      *@Date: 19-11-28
@@ -213,9 +255,8 @@ public class SettingsActivity extends AppCompatActivity {
         new AlertDialog.Builder(this).setTitle("请输入打卡半径").setView(view).setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                double radius = Double.parseDouble(viewRadius.getText().toString());
-                tvSettingRadius.setText(tvSettingRadius.getText().toString() + viewRadius.getText() + " 米");
-                info.setRadius(radius);
+                tvSettingRadius.setText(viewRadius.getText());
+
             }
         }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
             @Override
@@ -245,29 +286,28 @@ public class SettingsActivity extends AppCompatActivity {
      *@Email：zhou.zhou@sim.com
      */
     private void myTimePicker(final int type) {
-        LocalTime now = LocalTime.now();
-        int hour = now.getHour();
-        int minute = now.getMinute();
+        //        LocalTime now = LocalTime.now();
+        //        int hour = now.getHour();
+        //        int minute = now.getMinute();
         new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
             @Override
             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
                 Date date = new Date();
+                date.setHours(hourOfDay);
+                date.setMinutes(hourOfDay);
                 String time = new SimpleDateFormat("HH:mm").format(date);
                 if (type == Constant.TYPE1) {
                     //set入info
-                    info.setTimeQuantum(time);
-                    tvSettingTimeNotificationLong.setText(tvSettingTimeNotificationLong.getText().toString() + hourOfDay + "时" + minute + "分");
+                    tvSettingTimeNotificationLong.setText(time);
                 }
                 if (type == Constant.TYPE2) {
-                    info.setTimeStart(time);
-                    tvSettingTimeAutoStart.setText(tvSettingTimeAutoStart.getText().toString() + time);
+                    tvSettingTimeAutoStart.setText(time);
                 }
-                if (type == 3){
-                    info.setTimeStop(time);
-                    tvSettingTimeAutoStop.setText(tvSettingTimeAutoStop.getText().toString() + time);
+                if (type == Constant.TYPE3) {
+                    tvSettingTimeAutoStop.setText(time);
                 }
             }
-        }, hour, minute, true).show();
+        }, 0, 0, true).show();
     }
 
     /*
@@ -281,4 +321,26 @@ public class SettingsActivity extends AppCompatActivity {
     private void writeToDatabase() {
         dbHelper.updateSettings(db, info);
     }
+
+    /*
+    *@Author: zhouzhou
+    *@Date: 19-11-29
+    *@Deecribe：恢复默认值
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            SignTableInfo signTableInfo = dbHelper.queryInfo(db,dbHelper.originName);
+            dbHelper.updateSettings(db,signTableInfo);
+            tvSettingCenterLatitude.setText(signTableInfo.getLatitude()+"");
+            tvSettingCenterLongitude.setText(signTableInfo.getLongitude()+"");
+            tvSettingRadius.setText(signTableInfo.getRadius()+"");
+            tvSettingTimeNotificationLong.setText(signTableInfo.getTimeQuantum()+"");
+            tvSettingTimeAutoStart.setText(signTableInfo.getTimeStart()+"");
+            tvSettingTimeAutoStop.setText(signTableInfo.getTimeStop()+"");
+        }
+    };
 }

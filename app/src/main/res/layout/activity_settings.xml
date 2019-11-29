@@ -28,26 +28,53 @@
             android:id="@+id/ll_setting_center"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/select_click"
             android:orientation="vertical">
 
             <TextView
                 style="@style/myStyleX"
+                android:drawableRight="@drawable/right"
                 android:text="@string/setting_center_point" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
                 android:orientation="vertical">
 
-                <TextView
-                    style="@style/myStyle"
-                    android:text="@string/setting_center_latitude"
-                    android:id="@+id/tv_setting_center_latitude"
-                    />
-                <TextView
-                    style="@style/myStyle"
-                    android:id="@+id/tv_setting_center_longitude"
-                    android:text="@string/setting_center_longitude" />
+                <LinearLayout
+                    android:id="@+id/ll_settings_lat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        style="@style/myStyle"
+                        android:text="@string/setting_center_latitude" />
+
+                    <TextView
+                        android:id="@+id/tv_setting_center_latitude"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/ll_settings_lng"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        style="@style/myStyle"
+                        android:text="@string/setting_center_longitude" />
+
+                    <TextView
+                        android:id="@+id/tv_setting_center_longitude"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2" />
+                </LinearLayout>
+
+
             </LinearLayout>
 
         </LinearLayout>
@@ -57,32 +84,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
+            android:background="@drawable/select_click"
             android:orientation="vertical">
 
             <TextView
                 style="@style/myStyleX"
+                android:drawableRight="@drawable/right"
                 android:text="@string/setting_distance" />
 
             <LinearLayout
+                android:id="@+id/ll_settings_radius"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
                 <TextView
                     style="@style/myStyle"
-                    android:id="@+id/tv_setting_radius"
-                    android:layout_weight="1"
                     android:text="@string/setting_radius" />
 
-                <!--<TextView-->
-                <!--android:id="@+id/tv_setting_radius_unit"-->
-                <!--android:layout_width="0dp"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:layout_marginTop="5dp"-->
-                <!--android:layout_weight="3"-->
-                <!--android:text="@string/setting_radius_unit"-->
-                <!--android:textColor="@color/settings_text"-->
-                <!--android:textSize="15sp" />-->
+                <TextView
+                    android:id="@+id/tv_setting_radius"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2" />
             </LinearLayout>
 
         </LinearLayout>
@@ -92,16 +116,30 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
+            android:background="@drawable/select_click"
             android:orientation="vertical">
 
             <TextView
                 style="@style/myStyleX"
+                android:drawableRight="@drawable/right"
                 android:text="@string/setting_time_notification" />
 
-            <TextView
-                android:id="@+id/tv_setting_time_notification_long"
-                style="@style/myStyle"
-                android:text="@string/setting_time_notification_long" />
+            <LinearLayout
+                android:id="@+id/ll_settings_notification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    style="@style/myStyle"
+                    android:text="@string/setting_time_notification_long" />
+
+                <TextView
+                    android:id="@+id/tv_setting_time_notification_long"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2" />
+            </LinearLayout>
+
 
         </LinearLayout>
 
@@ -114,21 +152,54 @@
 
             <TextView
                 style="@style/myStyleX"
+                android:clickable="false"
                 android:text="@string/setting_time_auto" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <TextView
-                    style="@style/myStyle"
-                    android:id="@+id/tv_setting_time_auto_start"
-                    android:text="@string/setting_time_auto_start" />
+                <LinearLayout
+                    android:id="@+id/ll_settings_start"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/select_click">
 
-                <TextView
-                    android:id="@+id/tv_setting_time_auto_stop"
-                    style="@style/myStyle"
-                    android:text="@string/setting_time_auto_stop" />
+                    <TextView
+                        style="@style/myStyle"
+                        android:clickable="false"
+                        android:text="@string/setting_time_auto_start" />
+
+                    <TextView
+                        android:id="@+id/tv_setting_time_auto_start"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:clickable="false"
+                        android:drawableRight="@drawable/right" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_settings_stop"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/select_click">
+
+                    <TextView
+                        style="@style/myStyle"
+                        android:clickable="false"
+                        android:text="@string/setting_time_auto_stop" />
+
+                    <TextView
+                        android:id="@+id/tv_setting_time_auto_stop"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:clickable="false"
+                        android:drawableRight="@drawable/right" />
+                </LinearLayout>
+
             </LinearLayout>
 
         </LinearLayout>
@@ -137,8 +208,8 @@
             android:id="@+id/ll_setting_review"
             style="@style/myStyleX"
             android:layout_marginTop="20dp"
-            android:text="@string/setting_review"
-/>
+            android:drawableRight="@drawable/right"
+            android:text="@string/setting_review" />
     </LinearLayout>
 
     <Button
@@ -146,9 +217,19 @@
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_marginLeft="50dp"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="100dp"
         android:layout_marginRight="50dp"
-        android:background="@drawable/input_shape"
+        android:background="@drawable/select_operator"
         android:text="@string/setting_save"
+        android:textSize="20sp" />
+    <Button
+        android:id="@+id/btn_settings_exist"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
+        android:background="@drawable/select_operator"
+        android:text="@string/setting_exist"
         android:textSize="20sp" />
 </LinearLayout>

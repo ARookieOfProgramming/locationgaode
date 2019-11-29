@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import com.zhouzhou.locationgaode.DBHelper;
 import com.zhouzhou.locationgaode.R;
+import com.zhouzhou.locationgaode.bean.Constant;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -34,8 +35,35 @@ public class RegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         ButterKnife.bind(this);
-        dbHelper = new DBHelper(this, "SignIn", null);
+        dbHelper = new DBHelper(this);
         db = dbHelper.getReadableDatabase();
+
+
+    }
+
+    private void initData() {
+        if (dbHelper.queryStatusName(db,dbHelper.originName).equals("false")){
+            ContentValues values = new ContentValues();
+
+            values.put("Time","00:10");
+            values.put("Radius","100");
+            values.put("Lat","31.00");
+            values.put("Lng","137.00");
+            values.put("TimeStart","08:00");
+            values.put("TimeStop","19:00");
+            values.put("UserName",Constant.name);
+            if (dbHelper.addStatusData(db,values,Constant.name)){
+                Toast.makeText(this, "yes", Toast.LENGTH_SHORT).show();
+            }
+            values.put("UserName","OriginName");
+            if(dbHelper.addStatusData(db,values,dbHelper.originName)){
+                Toast.makeText(this, "初始化数据成功", Toast.LENGTH_SHORT).show();
+
+            }else{
+                Toast.makeText(this, "初始化数据失败", Toast.LENGTH_SHORT).show();
+            }
+
+        }
     }
 
     /*
@@ -90,24 +118,12 @@ public class RegisterActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        String result = dbHelper.queryOriginName(db);
-        if (result.equals("true")){
-            ContentValues values = new ContentValues();
-            values.put("Time","00:10");
-            values.put("Radius","100");
-            values.put("Issign","false");
-            values.put("Lat","31.00");
-            values.put("Lon","137.00");
-            values.put("TimeStart","08:00");
-            values.put("TimeStop","19:00");
-            dbHelper.addOriginData(db,values);
-        }else{
-            Toast.makeText(this, "初始化数据失败", Toast.LENGTH_SHORT).show();
-        }
+        //初始化默认数据
     }
 
     @OnClick(R.id.btn_register)
     public void onViewClicked() {
+        initData();
         String result = confirmName();
         if (result.equals("true")) {
             registerUser();

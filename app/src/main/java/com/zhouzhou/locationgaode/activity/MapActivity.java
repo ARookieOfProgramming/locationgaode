@@ -10,9 +10,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,6 +33,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -48,6 +52,7 @@ import com.amap.api.maps2d.model.Circle;
 import com.amap.api.maps2d.model.CircleOptions;
 import com.amap.api.maps2d.model.LatLng;
 import com.amap.api.maps2d.model.MyLocationStyle;
+import com.zhouzhou.locationgaode.DBHelper;
 import com.zhouzhou.locationgaode.R;
 import com.zhouzhou.locationgaode.bean.Constant;
 
@@ -63,6 +68,7 @@ import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 import static com.amap.api.fence.GeoFenceClient.GEOFENCE_IN;
 import static com.amap.api.fence.GeoFenceClient.GEOFENCE_OUT;
@@ -73,10 +79,10 @@ public class MapActivity extends AppCompatActivity {
 
     @BindView(R.id.map)
     MapView map;
-    //    @BindView(R.id.btn_map_show)
-    //    Button btnMapShow;
-    //    @BindView(R.id.btn_map_cancel)
-    //    Button btnMapCancel;
+        @BindView(R.id.btn_map_show)
+        Button btnMapShow;
+        @BindView(R.id.btn_map_cancel)
+        Button btnMapCancel;
     //    @BindView(R.id.tv_map_show)
     //    TextView tvMapShow;
     //定义接收广播的action字符串
@@ -87,6 +93,8 @@ public class MapActivity extends AppCompatActivity {
     NavigationView designNavigationView;
     @BindView(R.id.design_drawer_view)
     DrawerLayout designDrawerView;
+
+    private boolean setting = false;
     private AMapLocationClient mLocationClient = null;//声明AMapLocationClient类对象
     private AMapLocationListener mLocationListener = new myAMapLocationListener();//声明定位回调监听器
     private Boolean isPassed = false;//权限通过
@@ -104,8 +112,9 @@ public class MapActivity extends AppCompatActivity {
     private double radiusCustomIn;//自定义签到半径
     private double radiusCustomOut;//自定义签退半径
 
-    private Vibrator vibrator = null;
-
+    private Vibrator vibrator = null;//震动相关
+    private DBHelper dbHelper;
+    private SQLiteDatabase db;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,6 +129,9 @@ public class MapActivity extends AppCompatActivity {
         map.onCreate(savedInstanceState);//在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，创建地图
         init();
         initToolBar();
+
+        dbHelper = new DBHelper(this);
+        db = dbHelper.getReadableDatabase();
     }
 
     private void init() {
@@ -162,7 +174,8 @@ public class MapActivity extends AppCompatActivity {
         if (geoCount <= 1) {
             mGeoFenceClient.setActivateAction(GEOFENCE_IN | GEOFENCE_OUT | GEOFENCE_STAYED);
             DPoint dPoint = new DPoint(latLng.latitude, latLng.longitude);
-            mGeoFenceClient.addGeoFence(dPoint, 100, "chuangjian");
+            float radius = (float) dbHelper.queryInfo(db,Constant.name).getRadius();
+            mGeoFenceClient.addGeoFence(dPoint,radius , "chuangjian");
             mGeoFenceClient.setGeoFenceListener(new GeoFenceListener() {
                 @Override
                 public void onGeoFenceCreateFinished(List<GeoFence> list, int i, String s) {
@@ -193,10 +206,9 @@ public class MapActivity extends AppCompatActivity {
      */
     private void addCircle(LatLng latLng) {
         circle = aMap.addCircle(new CircleOptions().center(latLng)//中心点
-                .radius(100)//半径
+                .radius((float) dbHelper.queryInfo(db,Constant.name).getRadius())//半径
                 .strokeColor(Color.argb(100, 0, 221, 255))//边框颜色
                 .fillColor(Color.argb(40, 0, 221, 255)).strokeWidth(5f));//填充颜色
-
     }
 
     /*
@@ -209,14 +221,19 @@ public class MapActivity extends AppCompatActivity {
      */ AMap.OnMapClickListener listenerClick = new AMap.OnMapClickListener() {
         @Override
         public void onMapClick(LatLng latLng) {
-            latLngCustom = new LatLng(latLng.latitude, latLng.longitude);
             latLngCustom = latLng;
             if (isClicked) {
-                if (geoCount == 1) {
+                if (geoCount > 0) {
                     mGeoFenceClient.removeGeoFence();
                     geoCount--;
                 }
                 if (circle != null) {
+                    circle.remove();
+                }
+                setMyGeoFence(latLng);
+            }
+            if (setting){
+                if (circle != null){
                     circle.remove();
                 }
                 setMyGeoFence(latLng);
@@ -247,26 +264,30 @@ public class MapActivity extends AppCompatActivity {
     }
 
 
-    //    @OnClick(R.id.btn_map_show)
-    //    public void onBtnMapShowClicked() {
+        @OnClick(R.id.btn_map_show)
+        public void onBtnMapShowClicked() {
+            Intent intent = getIntent();
+            if (intent.getStringExtra("request").equals("request")){
+                setting = true;
+            }
+
+    //        try {
+    //            unregisterReceiver(mGeoFenceReceiver);
+    //        } catch (Exception e) {
     //
-    ////        try {
-    ////            unregisterReceiver(mGeoFenceReceiver);
-    ////        } catch (Exception e) {
-    ////
-    ////        } finally {
-    ////            isClicked = true;
-    ////        }
-    //        isClicked = true;
-    //    }
-    //
-    //    @OnClick(R.id.btn_map_cancel)
-    //    public void onBtnMapCancelClicked() {
-    //        isClicked = false;
-    //        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-    //        filter.addAction(GEOFENCE_BROADCAST_ACTION);
-    //        registerReceiver(mGeoFenceReceiver, filter);
-    //    }
+    //        } finally {
+    //            isClicked = true;
+    //        }
+            //isClicked = true;
+        }
+
+        @OnClick(R.id.btn_map_cancel)
+        public void onBtnMapCancelClicked() {
+//            isClicked = false;
+//            IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+//            filter.addAction(GEOFENCE_BROADCAST_ACTION);
+//            registerReceiver(mGeoFenceReceiver, filter);
+        }
 
     /*
      *@Author: zhouzhou
@@ -548,7 +569,7 @@ public class MapActivity extends AppCompatActivity {
     }
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+
         if (mGeoFenceClient != null) {
             mGeoFenceClient.removeGeoFence();
         }
@@ -564,7 +585,9 @@ public class MapActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+        super.onDestroy();
     }
+
 
     @Override
     protected void onResume() {
@@ -579,6 +602,17 @@ public class MapActivity extends AppCompatActivity {
         super.onPause();
         //在activity执行onPause时执行mMapView.onPause ()，暂停地图的绘制
         map.onPause();
+
+    }
+
+    @Override
+    public void finish() {
+        if (setting){
+            Intent intent = new Intent();
+            intent.putExtra("latlng",new double[]{latLngCustom.latitude,latLngCustom.longitude});
+            setResult(Constant.resultCode,intent);
+        }
+        super.finish();
     }
 
     @Override

@@ -46,7 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
         //初始化数据库
-        dbHelper = new DBHelper(this, "SignIn", null);
+        dbHelper = new DBHelper(this);
         db = dbHelper.getReadableDatabase();
 
         rememberUser();
