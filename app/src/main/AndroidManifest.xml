@@ -38,8 +38,7 @@
 
         <service android:name="com.amap.api.location.APSService" />
 
-        <activity
-            android:name=".activity.MapActivity"/>
+        <activity android:name=".activity.MapActivity" />
         <activity
             android:name=".activity.LoginActivity"
             android:launchMode="singleTask">
@@ -58,7 +57,8 @@
         <!-- <action android:name="com.location.apis.geofencedemo.broadcast"/> -->
         <!-- </intent-filter> -->
         <!-- </receiver> -->
-        <activity android:name=".activity.SettingsActivity"></activity>
+        <activity android:name=".activity.SettingsActivity" android:launchMode="singleTask"/>
+        <activity android:name=".activity.SettingPointMapActivity"></activity>
     </application>
 
 </manifest>

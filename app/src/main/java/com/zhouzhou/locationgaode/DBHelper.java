@@ -23,8 +23,9 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String originName = "OriginName";
     private static final String SQName = "SignIn";
     private static final int VERSION = 1;
-    private static final String CREATE_SIGN = "create table Sign(" + " id Integer primary key autoincrement," + " UserName text," + " UserPassword text," + "  Issign text)";
+    private static final String CREATE_SIGN = "create table Sign(" + " id Integer primary key autoincrement," + " UserName text," + " UserPassword text)";
     private static final String CREATE_STATUS = "create table Status(" + " id Integer primary key autoincrement," + " UserName text," + " Time text," + " Radius text," + " Lat text," + " Lng text," + " TimeStart text," + "TimeStop text)";
+    private static final String CREATE_SIGNSTATUS = "create table SignStatus(" + " id Integer primary key autoincrement," + "  signInIdentity text," + "  sighOutIdentity text,"+" signInSend text,"+"getSignOutSend text,"+" nowadays text, "+" signInDate text,"+"signOutDate text,"+" pointList text)";
 
     public DBHelper(@Nullable Context context) {
         super(context, SQName, null, VERSION);
@@ -35,12 +36,67 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_SIGN);
         db.execSQL(CREATE_STATUS);
+        db.execSQL(CREATE_SIGNSTATUS);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("drop table if exists Sign");
         db.execSQL("drop table if exists Status");
+        db.execSQL("drop table if exists SignStatus");
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-2
+     *@Deecribe：将签到结果写入数据库中
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public String updateSign(SQLiteDatabase db, ContentValues values, String columName) {
+        db = getReadableDatabase();
+        String isSucceed = "0";
+        Cursor cursor = null;
+        try {
+            db.update("Status", values, "UserName = ?", new String[]{Constant.name});
+        } catch (Exception e) {
+            isSucceed = "0";
+        } finally {
+            db.close();
+        }
+        isSucceed = queryIsSign(db, columName);
+        return isSucceed;
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-2
+     *@Deecribe：查询打卡状态
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public String queryIsSign(SQLiteDatabase db, String columName) {
+        db = getReadableDatabase();
+        String isSign = "0";
+        Cursor cursor = null;
+        try {
+            cursor = db.query("Status", new String[]{columName}, "UserName = ?", new String[]{Constant.name}, null, null, null);
+            if (cursor != null) {
+                if (cursor.moveToNext()) {
+                    isSign = cursor.getString(cursor.getColumnIndex(columName));
+                    if (isSign == null){
+                        isSign = "0";
+                    }
+                }
+            }
+        } catch (Exception e) {
+            isSign = "0";
+        } finally {
+            db.close();
+        }
+        return isSign;
     }
 
     /*
@@ -51,7 +107,7 @@ public class DBHelper extends SQLiteOpenHelper {
      *@Return:
      *@Email：zhou.zhou@sim.com
      */
-    public String queryStatusName(SQLiteDatabase db,String type) {
+    public String queryStatusName(SQLiteDatabase db, String type) {
         db = this.getReadableDatabase();
         String result = "";
         Cursor cursor = null;
@@ -81,7 +137,7 @@ public class DBHelper extends SQLiteOpenHelper {
      *@Return:
      *@Email：zhou.zhou@sim.com
      */
-    public Boolean addStatusData(SQLiteDatabase db, ContentValues values,String type) {
+    public Boolean addStatusData(SQLiteDatabase db, ContentValues values, String type) {
         db = this.getReadableDatabase();
         Boolean isSuccess = false;
         try {
@@ -90,7 +146,7 @@ public class DBHelper extends SQLiteOpenHelper {
         } finally {
             db.close();
         }
-        if (queryStatusName(db,type).equals("true")) {
+        if (queryStatusName(db, type).equals("true")) {
             isSuccess = true;
         }
         return isSuccess;
@@ -183,29 +239,6 @@ public class DBHelper extends SQLiteOpenHelper {
         return isSuccess;
     }
 
-    /*
-     *@Author: zhouzhou
-     *@Date: 19-11-28
-     *@Deecribe：添加设置数据
-     *@Params:
-     *@Return:
-     *@Email：zhou.zhou@sim.com
-     */
-    public void addData(SQLiteDatabase db, ContentValues values) {
-        db = this.getReadableDatabase();
-        String result = "";
-        Cursor cursor = null;
-        try {
-            db.insert("Status", null, values);
-            cursor = db.query("Status", null, "UserName = ?", new String[]{Constant.name}, null, null, null);
-            if (cursor.moveToNext()) {
-                result = "true";
-            }
-        } catch (Exception e) {
-        } finally {
-            db.close();
-        }
-    }
 
     /*
      *@Author: zhouzhou
@@ -239,20 +272,20 @@ public class DBHelper extends SQLiteOpenHelper {
             db.close();
         }
         if (isExist) {
-            updateSet(db,values);
+            updateSet(db, values);
         } else {
-            addStatusData(db, values,Constant.name);
+            addStatusData(db, values, Constant.name);
         }
 
     }
 
-    public void updateSet(SQLiteDatabase db,ContentValues values) {
+    public void updateSet(SQLiteDatabase db, ContentValues values) {
         db = getReadableDatabase();
         try {
             db.update("Status", values, "UserName = ?", new String[]{Constant.name});
-        }catch (Exception e){
+        } catch (Exception e) {
 
-        }finally {
+        } finally {
             db.close();
         }
     }
@@ -298,5 +331,73 @@ public class DBHelper extends SQLiteOpenHelper {
      */
     private String getString(Cursor cursor, String str) {
         return cursor.getString(cursor.getColumnIndex(str));
+    }
+
+    /*
+    *@Author: zhouzhou
+    *@Date: 19-12-2
+    *@Deecribe：更新signStatus表
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    public void updateSignStatus(SQLiteDatabase db,String nowadays,ContentValues values){
+         db = getReadableDatabase();
+         Boolean isTrue = false;
+         Cursor cursor = null;
+         try {
+             cursor = db.query("SignStatus",null,"userName = ? and nowadays = ?",new String[]{Constant.name,nowadays},null,null,null);
+             if (null != null){
+                 if (cursor.moveToNext()){
+                     isTrue = true;
+                 }
+             }
+         }catch (Exception e){
+
+         }finally {
+             db.close();
+         }
+         if (isTrue){
+             upSignStatus(db,values,nowadays);
+         }else{
+             addSignStatus(db,values);
+         }
+    }
+    /*
+    *@Author: zhouzhou
+    *@Date: 19-12-2
+    *@Deecribe：增加数据
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    public void addSignStatus(SQLiteDatabase db,ContentValues values){
+        db = getReadableDatabase();
+        try {
+            db.insert("SignStatus",null,values);
+        }catch (Exception e){
+
+        }finally {
+            db.close();
+        }
+
+    }
+    /*
+    *@Author: zhouzhou
+    *@Date: 19-12-2
+    *@Deecribe：更新数据
+    *@Params:
+    *@Return:
+    *@Email：zhou.zhou@sim.com
+    */
+    public void upSignStatus(SQLiteDatabase db,ContentValues values,String nowadays){
+        db = getReadableDatabase();
+        try {
+            db.update("SignStatus",values,"nowadays = ?",new String[]{nowadays});
+        }catch(Exception e){
+
+        }finally {
+            db.close();
+        }
     }
 }

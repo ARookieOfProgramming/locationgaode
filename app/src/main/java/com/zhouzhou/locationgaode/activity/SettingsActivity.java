@@ -94,6 +94,7 @@ public class SettingsActivity extends AppCompatActivity {
         } else {
             tableInfo = dbHelper.queryInfo(db, Constant.name);
         }
+
         tvSettingCenterLatitude.setText("" + tableInfo.getLatitude());
         tvSettingCenterLongitude.setText("" + tableInfo.getLongitude());
         tvSettingRadius.setText("" + tableInfo.getRadius());
@@ -114,7 +115,7 @@ public class SettingsActivity extends AppCompatActivity {
                 }
                 if (which == 1) {
                     //跳转到地图去标点，标完点回来
-                    startActivityForResult(new Intent(SettingsActivity.this,MapActivity.class).putExtra("request","request"),requestCode);
+                    startActivityForResult(new Intent(SettingsActivity.this,SettingPointMapActivity.class).putExtra("radius",tvSettingRadius.getText().toString()),requestCode);
                     dialog.dismiss();
                 }
             }
@@ -123,12 +124,10 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        Toast.makeText(this, "hah", Toast.LENGTH_SHORT).show();
         if (requestCode == this.requestCode && resultCode == Constant.resultCode){
             double[] latlngs = data.getDoubleArrayExtra("latlng");
-            tvSettingCenterLongitude.setText(latlngs[0]+"");
-            tvSettingCenterLatitude.setText(latlngs[1]+"");
-            Toast.makeText(this, "hah"+latlngs[0]+"", Toast.LENGTH_SHORT).show();
+            tvSettingCenterLatitude.setText(latlngs[0]+"");
+            tvSettingCenterLongitude.setText(latlngs[1]+"");
         }
     }
 
@@ -156,7 +155,6 @@ public class SettingsActivity extends AppCompatActivity {
     public void onTvSettingTimeAutoStopClicked() {
         myTimePicker(Constant.TYPE3);
     }
-
     @OnClick(R.id.btn_settings_save)
     public void onBtnSettingsSaveClicked() {
         //经纬度添加进info，等待保存

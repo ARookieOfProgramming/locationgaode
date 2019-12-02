@@ -4,7 +4,7 @@ package com.zhouzhou.locationgaode.bean;
  * author : ZhouZhou
  * e-mail : zhou.zhou@sim.com
  * date   : 19-11-28下午3:02
- * desc   :
+ * desc   :设置项实体
  * version: 1.0
  */
 public class SignTableInfo {
@@ -14,8 +14,6 @@ public class SignTableInfo {
     private String timeQuantum;//时间段
     private String timeStart;//开始时间
     private String timeStop;//结束时间
-
-
 
     public SignTableInfo() {
     }
