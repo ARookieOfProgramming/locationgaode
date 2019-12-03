@@ -62,7 +62,6 @@ public class RegisterActivity extends AppCompatActivity {
             }else{
                 Toast.makeText(this, "初始化数据失败", Toast.LENGTH_SHORT).show();
             }
-
         }
     }
 

@@ -7,8 +7,15 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.support.annotation.Nullable;
 
+import com.google.gson.Gson;
 import com.zhouzhou.locationgaode.bean.Constant;
+import com.zhouzhou.locationgaode.bean.SignStatusInfo;
+import com.zhouzhou.locationgaode.bean.SignStatusInfoFull;
 import com.zhouzhou.locationgaode.bean.SignTableInfo;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * author : ZhouZhou
@@ -20,12 +27,16 @@ import com.zhouzhou.locationgaode.bean.SignTableInfo;
 public class DBHelper extends SQLiteOpenHelper {
 
     private Context mContext;
+    private static final String patternSimple = "yyyy:MM:dd";
+    private static final String patternFull = "yyyy:MM:dd HH:mm";
+    private static final String patternHour = "HH:mm";
+
     public static final String originName = "OriginName";
     private static final String SQName = "SignIn";
     private static final int VERSION = 1;
     private static final String CREATE_SIGN = "create table Sign(" + " id Integer primary key autoincrement," + " UserName text," + " UserPassword text)";
     private static final String CREATE_STATUS = "create table Status(" + " id Integer primary key autoincrement," + " UserName text," + " Time text," + " Radius text," + " Lat text," + " Lng text," + " TimeStart text," + "TimeStop text)";
-    private static final String CREATE_SIGNSTATUS = "create table SignStatus(" + " id Integer primary key autoincrement," + "  signInIdentity text," + "  sighOutIdentity text,"+" signInSend text,"+"getSignOutSend text,"+" nowadays text, "+" signInDate text,"+"signOutDate text,"+" pointList text)";
+    private static final String CREATE_SIGNSTATUS = "create table SignStatus(" + " id Integer primary key autoincrement," + "  UserName text," + "  nowadays text," + "info text)";
 
     public DBHelper(@Nullable Context context) {
         super(context, SQName, null, VERSION);
@@ -86,12 +97,13 @@ public class DBHelper extends SQLiteOpenHelper {
             if (cursor != null) {
                 if (cursor.moveToNext()) {
                     isSign = cursor.getString(cursor.getColumnIndex(columName));
-                    if (isSign == null){
+                    if (isSign == null) {
                         isSign = "0";
                     }
                 }
             }
         } catch (Exception e) {
+            String mess = e.getMessage();
             isSign = "0";
         } finally {
             db.close();
@@ -293,18 +305,18 @@ public class DBHelper extends SQLiteOpenHelper {
     /*
      *@Author: zhouzhou
      *@Date: 2019/11/28
-     *@Deecribe：取数据
+     *@Deecribe：取signTableinfo数据
      *@Params:
      *@Return:
      *@Email：zhou.zhou@sim.com
      */
-    public SignTableInfo queryInfo(SQLiteDatabase db, String type) {
+    public SignTableInfo queryInfo(SQLiteDatabase db, String userName) {
         SignTableInfo info = new SignTableInfo();
         db = this.getReadableDatabase();
         Cursor cursor = null;
         try {
             //new String[]{"Time", "Issign", "Lat", "Lng", "TimeStart", "TimeStop"}
-            cursor = db.query("Status", null, "UserName = ?", new String[]{type}, null, null, null);
+            cursor = db.query("Status", null, "UserName = ?", new String[]{userName}, null, null, null);
             if (cursor.moveToNext()) {
                 info.setLatitude(Double.parseDouble(getString(cursor, "Lat")));
                 info.setLongitude(Double.parseDouble(cursor.getString(cursor.getColumnIndex("Lng"))));
@@ -334,70 +346,179 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     /*
-    *@Author: zhouzhou
-    *@Date: 19-12-2
-    *@Deecribe：更新signStatus表
-    *@Params:
-    *@Return:
-    *@Email：zhou.zhou@sim.com
-    */
-    public void updateSignStatus(SQLiteDatabase db,String nowadays,ContentValues values){
-         db = getReadableDatabase();
-         Boolean isTrue = false;
-         Cursor cursor = null;
-         try {
-             cursor = db.query("SignStatus",null,"userName = ? and nowadays = ?",new String[]{Constant.name,nowadays},null,null,null);
-             if (null != null){
-                 if (cursor.moveToNext()){
-                     isTrue = true;
-                 }
-             }
-         }catch (Exception e){
-
-         }finally {
-             db.close();
-         }
-         if (isTrue){
-             upSignStatus(db,values,nowadays);
-         }else{
-             addSignStatus(db,values);
-         }
-    }
-    /*
-    *@Author: zhouzhou
-    *@Date: 19-12-2
-    *@Deecribe：增加数据
-    *@Params:
-    *@Return:
-    *@Email：zhou.zhou@sim.com
-    */
-    public void addSignStatus(SQLiteDatabase db,ContentValues values){
+     *@Author: zhouzhou
+     *@Date: 19-12-2
+     *@Deecribe：查询signStatus表
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public Boolean querySignStatus(SQLiteDatabase db, String nowadays) {
         db = getReadableDatabase();
+        Boolean isTrue = false;
+        Cursor cursor = null;
         try {
-            db.insert("SignStatus",null,values);
-        }catch (Exception e){
-
-        }finally {
+            cursor = db.query("SignStatus", null, "UserName = ? and nowadays = ?", new String[]{Constant.name, nowadays}, null, null, null);
+            if (cursor != null) {
+                if (cursor.moveToNext()) {
+                    isTrue = true;
+                }
+            }
+        } catch (Exception e) {
+            String w = e.getMessage();
+        } finally {
             db.close();
         }
-
+        return isTrue;
     }
     /*
-    *@Author: zhouzhou
-    *@Date: 19-12-2
-    *@Deecribe：更新数据
-    *@Params:
-    *@Return:
-    *@Email：zhou.zhou@sim.com
-    */
-    public void upSignStatus(SQLiteDatabase db,ContentValues values,String nowadays){
-        db = getReadableDatabase();
-        try {
-            db.update("SignStatus",values,"nowadays = ?",new String[]{nowadays});
-        }catch(Exception e){
+     *@Author: zhouzhou
+     *@Date: 19-12-3
+     *@Deecribe：返回statusInfo
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
 
-        }finally {
+    public SignStatusInfoFull getStatusInfo(SQLiteDatabase db, String nowadays) {
+        db = getReadableDatabase();
+        SignStatusInfoFull statusInfo = new SignStatusInfoFull();
+        Cursor cursor = null;
+        try {
+            cursor = db.query("SignStatus", null, "UserName = ? and nowadays = ?", new String[]{Constant.name, nowadays}, null, null, null);
+            if (cursor != null) {
+                if (cursor.moveToNext()) {
+                    statusInfo.setNowadays(nowadays);
+                    statusInfo.setUserName(Constant.name);
+                    statusInfo.setStatusInfo(fromJson(cursor.getString(cursor.getColumnIndex("info"))));
+                }
+            }
+        } catch (Exception e) {
+            String w = e.getMessage();
+        } finally {
             db.close();
         }
+        return statusInfo;
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-2
+     *@Deecribe：增加数据
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public boolean addSignStatus(SQLiteDatabase db, ContentValues values, String nowadays) {
+        db = getReadableDatabase();
+        boolean isTrue = false;
+        Cursor cursor = null;
+        try {
+            db.insert("SignStatus", null, values);
+        } catch (Exception e) {
+
+        } finally {
+            db.close();
+        }
+        if (querySignStatus(db, nowadays)) {
+            isTrue = true;
+        }
+        return isTrue;
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-2
+     *@Deecribe：更新数据
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public void upSignStatus(SQLiteDatabase db, ContentValues values, String nowadays) {
+        db = getReadableDatabase();
+        try {
+            db.update("SignStatus", values, "UserName = ? and nowadays = ?", new String[]{Constant.name, nowadays});
+        } catch (Exception e) {
+            String mess = e.getMessage();
+        } finally {
+            db.close();
+        }
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-3
+     *@Deecribe：日期转化为字符串
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public String dateToString(Date date, int type) {
+        SimpleDateFormat format = null;
+        if (Constant.timeFull == type) {
+            format = new SimpleDateFormat(patternFull);
+        } else {
+            format = new SimpleDateFormat(patternSimple);
+        }
+
+        String dateString = "";
+        if (null != date) {
+            dateString = format.format(date);
+        }
+        return dateString;
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-3
+     *@Deecri字符串转化为日期
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public Date stringToDate(String dateString, int type) {
+        SimpleDateFormat format = null;
+        if (Constant.timeFull == type) {
+            format = new SimpleDateFormat(patternFull);
+        } else if(Constant.timeSimple == type){
+            format = new SimpleDateFormat(patternSimple);
+        }else{
+            format = new SimpleDateFormat(patternHour);
+        }
+        Date date = null;
+        try {
+            date = format.parse(dateString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return date;
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-3
+     *@Deecribe：转换成json
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public String toJson(SignStatusInfo info) {
+        Gson gson = new Gson();
+        String toJson = gson.toJson(info);
+        return toJson;
+    }
+
+    /*
+     *@Author: zhouzhou
+     *@Date: 19-12-3
+     *@Deecribe：json转换回来
+     *@Params:
+     *@Return:
+     *@Email：zhou.zhou@sim.com
+     */
+    public SignStatusInfo fromJson(String json) {
+        Gson gson = new Gson();
+        SignStatusInfo statusInfo = gson.fromJson(json, SignStatusInfo.class);
+        return statusInfo;
     }
 }

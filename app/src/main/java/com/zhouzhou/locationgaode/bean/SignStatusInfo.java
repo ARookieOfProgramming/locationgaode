@@ -15,23 +15,53 @@ import java.util.Objects;
  */
 public class SignStatusInfo {
 
-    private String userName;//用户名
     private String signInIdentity = "no";//签到标识
-    private String sighOutIdentity = "no";//签退标识
-    private String signInSend = "no";//签到通知标识
-    private String getSignOutSend = "no";//离开通知标识
-    private String nowadays = "2000-00-00";//当天日期
-    private String signInDate = "2000-00-00";//签到时间
-    private String signOutDate = "2000-00-00";//签退时间
-    private List<LatLng> pointList = new ArrayList<>();//储存的点坐标
-
-    public String getUserName() {
-        return userName;
+    private String signOutIdentity = "no";//签退标识
+    private int signInSend = 0;//签到通知标识
+    private int signOutSend = 0;//离开通知标识
+    private String signInDate = "2000:00:00 00:00";//签到时间
+    private String signOutDate = "2000:00:00 00:00";//签退时间
+    private String isUpdate = "no";//是否已经更新
+    private List<LatLng> pointList = new ArrayList<>();//点的坐标集合
+    public List<LatLng> getPointList() {
+        return pointList;
+    }
+    public void setPointList(List<LatLng> pointList) {
+        this.pointList = pointList;
+    }
+    public int getSignOutSend() {
+        return signOutSend;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setSignOutSend(int signOutSend) {
+        this.signOutSend = signOutSend;
     }
+
+
+
+    public String getIsUpdate() {
+        return isUpdate;
+    }
+
+    public void setIsUpdate(String isUpdate) {
+        this.isUpdate = isUpdate;
+    }
+    public int getSignInSend() {
+        return signInSend;
+    }
+
+    public void setSignInSend(int signInSend) {
+        this.signInSend = signInSend;
+    }
+
+    public int signOutSend() {
+        return signOutSend;
+    }
+
+    public void setsignOutSend(int signOutSend) {
+        this.signOutSend = signOutSend;
+    }
+
     public String getSignInIdentity() {
         return signInIdentity;
     }
@@ -40,37 +70,15 @@ public class SignStatusInfo {
         this.signInIdentity = signInIdentity;
     }
 
-    public String getSighOutIdentity() {
-        return sighOutIdentity;
+    public String getsignOutIdentity() {
+        return signOutIdentity;
     }
 
-    public void setSighOutIdentity(String sighOutIdentity) {
-        this.sighOutIdentity = sighOutIdentity;
+    public void setsignOutIdentity(String signOutIdentity) {
+        this.signOutIdentity = signOutIdentity;
     }
 
-    public String getSignInSend() {
-        return signInSend;
-    }
 
-    public void setSignInSend(String signInSend) {
-        this.signInSend = signInSend;
-    }
-
-    public String getGetSignOutSend() {
-        return getSignOutSend;
-    }
-
-    public void setGetSignOutSend(String getSignOutSend) {
-        this.getSignOutSend = getSignOutSend;
-    }
-
-    public String getNowadays() {
-        return nowadays;
-    }
-
-    public void setNowadays(String nowadays) {
-        this.nowadays = nowadays;
-    }
 
     public String getSignInDate() {
         return signInDate;
@@ -88,23 +96,13 @@ public class SignStatusInfo {
         this.signOutDate = signOutDate;
     }
 
-    public List<LatLng> getPointList() {
-        return pointList;
-    }
-
-    public void setPointList(List<LatLng> pointList) {
-        this.pointList = pointList;
-    }
-
-
-
     public SignStatusInfo() {
     }
 
 
     @Override
     public String toString() {
-        return "SignStatusInfo{" + "signInIdentity='" + signInIdentity + '\'' + ", sighOutIdentity='" + sighOutIdentity + '\'' + ", signInSend='" + signInSend + '\'' + ", getSignOutSend='" + getSignOutSend + '\'' + ", nowadays='" + nowadays + '\'' + ", signInDate='" + signInDate + '\'' + ", signOutDate='" + signOutDate + '\'' + '}';
+        return "SignStatusInfo{" + "signInIdentity='" + signInIdentity + '\'' + ", signOutIdentity='" + signOutIdentity + '\'' + ", signInSend='" + signInSend + '\'' + ", signOutSend='" + signOutSend + '\'' + ", nowadays='" + '\'' + ", signInDate='" + signInDate + '\'' + ", signOutDate='" + signOutDate + '\'' + '}';
     }
 
     @Override
@@ -114,12 +112,12 @@ public class SignStatusInfo {
         if (o == null || getClass() != o.getClass())
             return false;
         SignStatusInfo that = (SignStatusInfo) o;
-        return Objects.equals(signInIdentity, that.signInIdentity) && Objects.equals(sighOutIdentity, that.sighOutIdentity) && Objects.equals(signInSend, that.signInSend) && Objects.equals(getSignOutSend, that.getSignOutSend) && Objects.equals(nowadays, that.nowadays) && Objects.equals(signInDate, that.signInDate) && Objects.equals(signOutDate, that.signOutDate);
+        return Objects.equals(signInIdentity, that.signInIdentity) && Objects.equals(signOutIdentity, that.signOutIdentity) && Objects.equals(signInSend, that.signInSend) && Objects.equals(signOutSend, that.signOutSend) && Objects.equals(signInDate, that.signInDate) && Objects.equals(signOutDate, that.signOutDate);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(signInIdentity, sighOutIdentity, signInSend, getSignOutSend, nowadays, signInDate, signOutDate);
+        return Objects.hash(signInIdentity, signOutIdentity, signInSend, signOutSend, signInDate, signOutDate);
     }
 }

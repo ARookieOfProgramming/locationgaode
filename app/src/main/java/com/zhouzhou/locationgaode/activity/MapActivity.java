@@ -55,11 +55,12 @@ import com.amap.api.maps2d.model.MyLocationStyle;
 import com.zhouzhou.locationgaode.DBHelper;
 import com.zhouzhou.locationgaode.R;
 import com.zhouzhou.locationgaode.bean.Constant;
+import com.zhouzhou.locationgaode.bean.SignStatusInfo;
+import com.zhouzhou.locationgaode.bean.SignStatusInfoFull;
 import com.zhouzhou.locationgaode.bean.SignTableInfo;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -103,13 +104,14 @@ public class MapActivity extends AppCompatActivity {
     private Circle circle = null;
 
     private GeoFenceClient mGeoFenceClient = null;//地理围栏客户端
-    private int countMove = 0;//按钮点击
-    private int countTime = 0;//按钮点击
+    private boolean btnChange = false;//按钮点击
     private int geoCount = 0;//地理围栏数
 
     private Vibrator vibrator = null;//震动相关
     private DBHelper dbHelper;
     private SQLiteDatabase db;
+    private SignStatusInfoFull statusInfoFull = null;
+    private SignStatusInfo statusInfo = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,11 +125,13 @@ public class MapActivity extends AppCompatActivity {
         mGeoFenceClient.createPendingIntent(GEOFENCE_BROADCAST_ACTION);
         vibrator = (Vibrator) getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);//震动
         map.onCreate(savedInstanceState);//在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，创建地图
-        init();
-        initToolBar();
 
         dbHelper = new DBHelper(this);
         db = dbHelper.getReadableDatabase();
+
+        init();
+        initToolBar();
+
     }
 
     private void init() {
@@ -144,7 +148,6 @@ public class MapActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         filter.addAction(GEOFENCE_BROADCAST_ACTION);
         registerReceiver(mGeoFenceReceiver, filter);
-
     }
 
     private void initToolBar() {
@@ -154,6 +157,19 @@ public class MapActivity extends AppCompatActivity {
         toolbar.setTitleTextColor(getResources().getColor(android.R.color.white));
         setSupportActionBar(toolbar);
         designNavigationView.setNavigationItemSelectedListener(new mYOnNavigationItemSelectedListener());
+
+        SignStatusInfo info = dbHelper.getStatusInfo(db,dbHelper.dateToString(new Date(),Constant.timeSimple)).getStatusInfo();
+        Boolean b1 = "yes".equals(info.getSignInIdentity());
+        Boolean b2 = "yes".equals(info.getsignOutIdentity());
+        if (b1 && b2){
+            btnSign.setText("打卡完成，回家休息喽");
+        }else if (b1 && !b2){
+       btnSign.setText("一键签退");
+        }else if (!b1 && b2){
+            btnSign.setText("一键签到");
+        }else{
+            btnSign.setText("一键签到");
+        }
     }
 
     /*
@@ -237,7 +253,10 @@ public class MapActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_sign)
     public void onViewClicked() {
+        statusInfoFull = dbHelper.getStatusInfo(db, dbHelper.dateToString(new Date(), Constant.timeSimple));
+        statusInfo = statusInfoFull.getStatusInfo();
         mLocationClient.startLocation();
+
         //        isClicked = true;
     }
 
@@ -261,7 +280,6 @@ public class MapActivity extends AppCompatActivity {
                     Message message = new Message();
                     message.obj = aMapLocation;
                     handler.sendMessage(message);
-
                     //                    }
                 } else {
                     //定位失败时，可通过ErrCode（错误码）信息来确定失败的原因，errInfo是错误信息，详见错误码表。
@@ -278,45 +296,40 @@ public class MapActivity extends AppCompatActivity {
             Boolean btnClicked = true;
             AMapLocation aMapLocation = (AMapLocation) msg.obj;
             SignTableInfo info = dbHelper.queryInfo(db, Constant.name);
-            //判断范围
+            //判断范围（签到有距离限制，签退无）
             float distance = AMapUtils.calculateLineDistance(new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude()), new LatLng(info.getLatitude(), info.getLongitude()));
             //在范围内，签到，toast成功
-            ContentValues values = new ContentValues();
-            String sign = "";
-            if (dbHelper.queryIsSign(db, "SignIn").equals("0")) {
-                if (distance <= info.getRadius()){
-                    values.put("SignIn", 1);
-                    sign = dbHelper.updateSign(db, values, "SignIn");
-                    if (sign.equals("1")) {
-                        Toast.makeText(MapActivity.this, "签到成功", Toast.LENGTH_SHORT).show();
-                        btnSign.setText("一键签退");
-                        btnClicked = false;
+            if("一键签到".equals(btnSign.getText().toString())){
+                if (statusInfoFull.getStatusInfo().getSignInIdentity().equals("no")) {
+                    if (distance <= info.getRadius()) {
+                        updateInfo("setSignInIdentity");
+                        if (statusInfoFull.getStatusInfo().getSignInIdentity().equals("yes")) {
+                            Toast.makeText(MapActivity.this, "签到成功", Toast.LENGTH_SHORT).show();
+                            btnSign.setText("一键签退");
+                            btnClicked = false;
+                        }
+                    } else {
+                        Toast.makeText(MapActivity.this, "未到打卡范围", Toast.LENGTH_SHORT).show();
                     }
-                }else{
-                    Toast.makeText(MapActivity.this, "未到签到范围", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MapActivity.this, "已签到", Toast.LENGTH_SHORT).show();
+                }
+            }else if ("一键签退".equals(btnSign.getText().toString())){
+                //时间大于下班点自动签退
+                if (statusInfoFull.getStatusInfo().getsignOutIdentity().equals("no") && btnClicked) {
+                        updateInfo("setsignOutIdentity");
+                        if (statusInfoFull.getStatusInfo().getsignOutIdentity().equals("yes")) {
+                            Toast.makeText(MapActivity.this, "签退成功", Toast.LENGTH_SHORT).show();
+                            btnSign.setText("打卡完成，回家休息喽");
+                        }
+                } else {
+                    Toast.makeText(MapActivity.this, "已签退", Toast.LENGTH_SHORT).show();
                 }
             }else{
-                Toast.makeText(MapActivity.this, "已签到", Toast.LENGTH_SHORT).show();
-            }
-
-            if (dbHelper.queryIsSign(db, "SignOut").equals("0") && btnClicked) {
-                if (distance <= info.getRadius()){
-                    values.put("SignOut", 1);
-                    sign = dbHelper.updateSign(db, values, "SignOut");
-                    if (sign.equals("1")) {
-                        Toast.makeText(MapActivity.this, "签退成功", Toast.LENGTH_SHORT).show();
-                        btnSign.setText("一键签到");
-                    }
-                }else{
-                    Toast.makeText(MapActivity.this, "未到签到范围", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(MapActivity.this, "已签退", Toast.LENGTH_SHORT).show();
-            }
-            if (distance > info.getRadius()) {
-                Toast.makeText(MapActivity.this, "未到签到范围", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapActivity.this, "快回家吃饭吧", Toast.LENGTH_SHORT).show();
             }
         }
+
     };
 
     /*
@@ -337,6 +350,35 @@ public class MapActivity extends AppCompatActivity {
         //        mLocationOption.setInterval(1000);
         //}
         return mLocationOption;
+    }
+
+    private void updateInfo(String type) {
+        ContentValues values = new ContentValues();
+        switch (type) {
+            case "setSignInIdentity":
+                statusInfo.setSignInIdentity("yes");
+                statusInfo.setSignInDate(dbHelper.dateToString(new Date(),Constant.timeFull));
+                break;
+            case "setsignOutIdentity":
+                statusInfo.setsignOutIdentity("yes");
+                statusInfo.setSignOutDate(dbHelper.dateToString(new Date(),Constant.timeFull));
+                break;
+            case "signInSend":
+                statusInfo.setSignInSend(1);
+                break;
+            case "signOutSend":
+                statusInfo.setsignOutSend(1);
+                break;
+            case "total":
+                statusInfo.setSignInIdentity("no");
+                statusInfo.setsignOutIdentity("no");
+                statusInfo.setSignInSend(0);
+                statusInfo.setsignOutSend(0);
+                break;
+        }
+        String json = dbHelper.toJson(statusInfo);
+        values.put("info", json);
+        dbHelper.upSignStatus(db, values, dbHelper.dateToString(new Date(), Constant.timeSimple));
     }
 
     /*
@@ -387,48 +429,43 @@ public class MapActivity extends AppCompatActivity {
     private BroadcastReceiver mGeoFenceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            statusInfoFull = dbHelper.getStatusInfo(db, dbHelper.dateToString(new Date(), Constant.timeSimple));
+            statusInfo = statusInfoFull.getStatusInfo();
             if (intent.getAction().equals(GEOFENCE_BROADCAST_ACTION)) {
                 //解析广播内容
                 //获取Bundle
                 Bundle bundle = intent.getExtras();
                 //获取围栏行为：
                 int status = bundle.getInt(GeoFence.BUNDLE_KEY_FENCESTATUS);
+                boolean signIn = statusInfo.getSignInIdentity().equals("no");
                 switch (status) {
                     case GEOFENCE_IN:
                         //到达签到距离，提示签到
-                        if (determineTime()) {
-                            if (dbHelper.queryIsSign(db, "SignIn").equals("0")) {
-                                showNotification(Constant.IN);
+                        if (signIn) {
+                            if (determineTime()) {
+                                if (statusInfo.getSignInSend() == 0) {
+                                    showNotification(Constant.IN);
+                                }
+
                             }
                         }
-                        //                        if (timer != null) {
-                        //                            timer.cancel();
-                        //                        }
-
                         break;
                     case GEOFENCE_OUT:
-                        if (dbHelper.queryIsSign(db, "SignOut").equals("0")) {
-                            if (countMove < 1) {
-                                showNotification(Constant.OUT);
-
-                            }
-                            if (countTime < 1) {
-                                timeCountNotification();
+                        if (statusInfo.getsignOutIdentity().equals("no") && !signIn) {
+                            if (determineTime()) {
+                                if (statusInfo.getSignOutSend() == 0) {
+                                    //到达签退距离，提示签到
+                                    showNotification(Constant.OUT);
+                                    //或一定时间签退
+                                    timeCountNotification();
+                                }
                             }
                         }
-                        //到达签退距离，提示签到
-                        //，或一定时间签退
                         break;
                     case GEOFENCE_STAYED:
-                        showNotification(Constant.STAYED);
+                        //十分钟收集一次坐标
                         break;
                 }
-                //获取自定义的围栏标识：
-                String customId = bundle.getString(GeoFence.BUNDLE_KEY_CUSTOMID);
-                //获取围栏ID:
-                String fenceId = bundle.getString(GeoFence.BUNDLE_KEY_FENCEID);
-                //获取当前有触发的围栏对象：
-                GeoFence fence = bundle.getParcelable(GeoFence.BUNDLE_KEY_FENCE);
             }
         }
     };
@@ -460,13 +497,14 @@ public class MapActivity extends AppCompatActivity {
         if (type == Constant.IN) {
             builder.setContentTitle("打卡提醒").setContentText("已进入签到范围");
             notification = builder.build();
+            updateInfo("signInSend");
             manager.notify(Constant.IN, notification);
         }
         if (type == Constant.OUT) {
             builder.setContentTitle("打卡提醒").setContentText("已离开签退范围");
             notification = builder.build();
+            updateInfo("signOutSend");
             manager.notify(Constant.IN, notification);
-            countMove++;
         }
         if (type == Constant.STAYED) {
             builder.setContentTitle("打卡提醒").setContentText("签到范围待机");
@@ -484,9 +522,11 @@ public class MapActivity extends AppCompatActivity {
      *@Email：zhou.zhou@sim.com
      */
     private Boolean determineTime() {
-        LocalDateTime now = LocalDateTime.now();
+        //LocalDateTime now = LocalDateTime.now();
         GregorianCalendar gre = new GregorianCalendar();
-        Date date = new Date(now.getYear() - 1900, now.getMonthValue() - 1, now.getDayOfMonth()); //年要减去1900，月份是0-11
+        //Date date = new Date(now.getYear() - 1900, now.getMonthValue() - 1, now.getDayOfMonth()); //年要减去1900，月份是0-11
+        Date date = new Date();
+        Date date1 = new Date();
         gre.setTime(date);
         int weekday = gre.get(Calendar.DAY_OF_WEEK) - 1; //0是星期天
         if (weekday > 5) {
@@ -496,21 +536,20 @@ public class MapActivity extends AppCompatActivity {
         SignTableInfo info = dbHelper.queryInfo(db, Constant.name);
         //开始时间
         try {
-            date = simpleDateFormat.parse(info.getTimeStart());
+            date1 = simpleDateFormat.parse(info.getTimeStart());
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        if (now.getHour() < date.getHours()) {
+        if (date.getHours() < date1.getHours()) {
             return false;
         }
         //结束时间
         try {
-            date = simpleDateFormat.parse(info.getTimeStop());
+            date1 = simpleDateFormat.parse(info.getTimeStop());
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        if (now.getHour() > date.getHours()) {
-            Toast.makeText(this, date.getHours(), Toast.LENGTH_SHORT).show();
+        if (date.getHours() > date1.getHours()) {
             return false;
         }
         return true;
@@ -531,25 +570,27 @@ public class MapActivity extends AppCompatActivity {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                showNotification(Constant.OUT);
-                timer = null;
+                if ("yes".equals(statusInfo.getsignOutIdentity())){
+                    timer.cancel();
+                }else{
+                    showNotification(Constant.OUT);
+                    timer.cancel();
+                }
             }
         };
-        timer.schedule(task, 0, 10000);
-        countTime++;
+        if ("no".equals(statusInfo.getsignOutIdentity())){
+            String timeQuantum = dbHelper.queryInfo(db, Constant.name).getTimeQuantum();
+            Date date = dbHelper.stringToDate(timeQuantum, Constant.timeHour);
+            long longtime = 1;
+            if (date.getHours() > 0){
+                longtime = date.getHours() * 60;
+            }
+            if (date.getMinutes() > 0){
+                longtime = longtime * date.getMinutes() * 60 * 1000;
+            }
+            timer.schedule(task, longtime);
+        }
     }
-
-    //    private void timeCountCancel(){
-    //        timer2 = new Timer();
-    //        TimerTask task = new TimerTask() {
-    //
-    //            @Override
-    //            public void run() {
-    //                timer1.cancel();
-    //            }
-    //        };
-    //        timer2.schedule(task,0,4900);
-    //    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -562,9 +603,13 @@ public class MapActivity extends AppCompatActivity {
         int itemId = item.getItemId();
         switch (itemId) {
             case R.id.action_location:
+                updateInfo("total");
                 break;
             case android.R.id.home:
                 designDrawerView.openDrawer(GravityCompat.START);
+                break;
+            case R.id.action_time_auto:
+                startActivity(new Intent(this,SettingsActivity.class));
                 break;
         }
 
@@ -631,9 +676,7 @@ public class MapActivity extends AppCompatActivity {
         super.onPause();
         //在activity执行onPause时执行mMapView.onPause ()，暂停地图的绘制
         map.onPause();
-
     }
-
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {

@@ -1,5 +1,6 @@
 package com.zhouzhou.locationgaode.activity;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
@@ -11,9 +12,13 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.zhouzhou.locationgaode.DBHelper;
 import com.zhouzhou.locationgaode.R;
 import com.zhouzhou.locationgaode.bean.Constant;
+import com.zhouzhou.locationgaode.bean.SignStatusInfo;
+
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -39,6 +44,7 @@ public class LoginActivity extends AppCompatActivity {
     private SQLiteDatabase db = null;
     private SharedPreferences.Editor editor = null;
     private SharedPreferences spf = null;
+    private SignStatusInfo statusInfo = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,14 +54,13 @@ public class LoginActivity extends AppCompatActivity {
         //初始化数据库
         dbHelper = new DBHelper(this);
         db = dbHelper.getReadableDatabase();
-
+        statusInfo = new SignStatusInfo();
         rememberUser();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
     }
 
     private void rememberUser() {
@@ -73,10 +78,10 @@ public class LoginActivity extends AppCompatActivity {
     private void queryUser(SQLiteDatabase db) {
         String name = etLoginName.getText().toString();
         String password = etLoginPassword.getText().toString();
-        String resultName = dbHelper.queryName(db,name);
+        String resultName = dbHelper.queryName(db, name);
         if (resultName.equals("true")) {
             String resultPassword = dbHelper.queryPassword(db, password, name);
-            if (resultPassword.equals("true")){
+            if (resultPassword.equals("true")) {
                 //结果正确,记住登录名，密码
                 editor = getSharedPreferences("user_info", MODE_PRIVATE).edit();
                 editor.putString("name", etLoginName.getText().toString());
@@ -85,15 +90,14 @@ public class LoginActivity extends AppCompatActivity {
                 Constant.name = etLoginName.getText().toString();
                 //打开地图
                 startActivity(new Intent(this, MapActivity.class));
-            }else if (resultPassword.equals("密码错误")){
+            } else if (resultPassword.equals("密码错误")) {
                 Toast.makeText(this, resultPassword, Toast.LENGTH_SHORT).show();
-            }else{
+            } else {
                 Toast.makeText(this, resultPassword, Toast.LENGTH_SHORT).show();
             }
-        }
-        else if (resultName.equals("查无此人")){
+        } else if (resultName.equals("查无此人")) {
             Toast.makeText(this, resultName, Toast.LENGTH_SHORT).show();
-        }else {
+        } else {
             Toast.makeText(this, resultName, Toast.LENGTH_SHORT).show();
         }
     }
@@ -104,7 +108,7 @@ public class LoginActivity extends AppCompatActivity {
         Bundle bundle = data.getBundleExtra("user");
         String name = bundle.getString("name");
         String password = bundle.getString("password");
-        if (name.length() > 0 && password.length() > 0){
+        if (name.length() > 0 && password.length() > 0) {
             etLoginName.setText(name);
             etLoginPassword.setText(password);
         }
@@ -117,16 +121,33 @@ public class LoginActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_login)
     public void onBtnLoginClicked() {
-        if(etLoginName.getText().length() > 0 && etLoginPassword.getText().length() > 0){
+        if (etLoginName.getText().length() > 0 && etLoginPassword.getText().length() > 0) {
             queryUser(db);
-        }else {
+            //没有当日表则添加
+            isAddNowadays();
+        } else {
             Toast.makeText(this, "请输入登录名或密码", Toast.LENGTH_SHORT).show();
         }
 
     }
 
+    private void isAddNowadays() {
+        if (!dbHelper.querySignStatus(db, dbHelper.dateToString(new Date(), Constant.timeSimple))) {
+            ContentValues values = new ContentValues();
+            values.put("UserName", Constant.name);
+            values.put("nowadays", dbHelper.dateToString(new Date(), Constant.timeSimple));
+            values.put("info", dbHelper.toJson(statusInfo));
+            if (dbHelper.addSignStatus(db, values, dbHelper.dateToString(new Date(), Constant.timeSimple))) {
+                Toast.makeText(this, "", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "失败", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     @OnClick(R.id.tv_login_forget_password)
     public void onTvLoginForgetPasswordClicked() {
+
     }
 
     @OnClick(R.id.tv_login_register)

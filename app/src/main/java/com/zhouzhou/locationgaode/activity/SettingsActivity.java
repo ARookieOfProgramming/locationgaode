@@ -23,7 +23,9 @@ import com.zhouzhou.locationgaode.R;
 import com.zhouzhou.locationgaode.bean.Constant;
 import com.zhouzhou.locationgaode.bean.SignTableInfo;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.Date;
 
 import butterknife.BindView;
@@ -290,19 +292,27 @@ public class SettingsActivity extends AppCompatActivity {
         new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
             @Override
             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                Date date = new Date();
-                date.setHours(hourOfDay);
-                date.setMinutes(hourOfDay);
-                String time = new SimpleDateFormat("HH:mm").format(date);
+                StringBuffer stringBuffer = new StringBuffer();
+                if (hourOfDay < 10){
+                    stringBuffer.append("0"+hourOfDay+":");
+                }else{
+                    stringBuffer.append(hourOfDay+":");
+                }
+                if (minute <10){
+                    stringBuffer.append("0"+minute);
+                }else{
+                    stringBuffer.append(hourOfDay);
+                }
+
                 if (type == Constant.TYPE1) {
                     //set入info
-                    tvSettingTimeNotificationLong.setText(time);
+                    tvSettingTimeNotificationLong.setText(stringBuffer);
                 }
                 if (type == Constant.TYPE2) {
-                    tvSettingTimeAutoStart.setText(time);
+                    tvSettingTimeAutoStart.setText(stringBuffer);
                 }
                 if (type == Constant.TYPE3) {
-                    tvSettingTimeAutoStop.setText(time);
+                    tvSettingTimeAutoStop.setText(stringBuffer);
                 }
             }
         }, 0, 0, true).show();
