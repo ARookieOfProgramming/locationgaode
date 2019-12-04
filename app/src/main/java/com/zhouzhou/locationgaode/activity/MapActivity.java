@@ -53,11 +53,13 @@ import com.amap.api.maps2d.model.CircleOptions;
 import com.amap.api.maps2d.model.LatLng;
 import com.amap.api.maps2d.model.MyLocationStyle;
 import com.zhouzhou.locationgaode.DBHelper;
+import com.zhouzhou.locationgaode.LocationWork;
 import com.zhouzhou.locationgaode.R;
 import com.zhouzhou.locationgaode.bean.Constant;
 import com.zhouzhou.locationgaode.bean.SignStatusInfo;
 import com.zhouzhou.locationgaode.bean.SignStatusInfoFull;
 import com.zhouzhou.locationgaode.bean.SignTableInfo;
+import com.zhouzhou.locationgaode.service.MyService;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -68,7 +70,14 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
+import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -94,6 +103,8 @@ public class MapActivity extends AppCompatActivity {
     DrawerLayout designDrawerView;
     @BindView(R.id.btn_sign)
     Button btnSign;
+    @BindView(R.id.btn_show)
+    Button btnShow;
 
     private AMapLocationClient mLocationClient = null;//声明AMapLocationClient类对象
     private AMapLocationListener mLocationListener = new myAMapLocationListener();//声明定位回调监听器
@@ -112,6 +123,7 @@ public class MapActivity extends AppCompatActivity {
     private SQLiteDatabase db;
     private SignStatusInfoFull statusInfoFull = null;
     private SignStatusInfo statusInfo = null;
+    private int sendCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +131,6 @@ public class MapActivity extends AppCompatActivity {
         setContentView(R.layout.activity_map);
         ButterKnife.bind(this);
         getPerssions();
-
         mGeoFenceClient = new GeoFenceClient(getApplicationContext());
         //创建并设置PendingIntent
         mGeoFenceClient.createPendingIntent(GEOFENCE_BROADCAST_ACTION);
@@ -131,7 +142,6 @@ public class MapActivity extends AppCompatActivity {
 
         init();
         initToolBar();
-
     }
 
     private void init() {
@@ -158,16 +168,16 @@ public class MapActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         designNavigationView.setNavigationItemSelectedListener(new mYOnNavigationItemSelectedListener());
 
-        SignStatusInfo info = dbHelper.getStatusInfo(db,dbHelper.dateToString(new Date(),Constant.timeSimple)).getStatusInfo();
+        SignStatusInfo info = dbHelper.getStatusInfo(db, dbHelper.dateToString(new Date(), Constant.timeSimple)).getStatusInfo();
         Boolean b1 = "yes".equals(info.getSignInIdentity());
         Boolean b2 = "yes".equals(info.getsignOutIdentity());
-        if (b1 && b2){
+        if (b1 && b2) {
             btnSign.setText("打卡完成，回家休息喽");
-        }else if (b1 && !b2){
-       btnSign.setText("一键签退");
-        }else if (!b1 && b2){
+        } else if (b1 && !b2) {
+            btnSign.setText("一键签退");
+        } else if (!b1 && b2) {
             btnSign.setText("一键签到");
-        }else{
+        } else {
             btnSign.setText("一键签到");
         }
     }
@@ -260,6 +270,12 @@ public class MapActivity extends AppCompatActivity {
         //        isClicked = true;
     }
 
+    @OnClick(R.id.btn_show)
+    public void onViewbtn_showClicked() {
+        startService(new Intent(this,MyService.class));
+    }
+
+
     /*
      *@Author: zhouzhou
      *@Date: 19-11-27
@@ -277,9 +293,14 @@ public class MapActivity extends AppCompatActivity {
                     //                    if (isClicked){
                     //                        isClicked = false;
                     mLocationClient.stopLocation();
-                    Message message = new Message();
-                    message.obj = aMapLocation;
-                    handler.sendMessage(message);
+                    if (sendCount != 0) {
+                        Message message = new Message();
+                        message.obj = aMapLocation;
+                        handler.sendMessage(message);
+                    } else {
+                        sendCount++;
+                    }
+
                     //                    }
                 } else {
                     //定位失败时，可通过ErrCode（错误码）信息来确定失败的原因，errInfo是错误信息，详见错误码表。
@@ -299,7 +320,7 @@ public class MapActivity extends AppCompatActivity {
             //判断范围（签到有距离限制，签退无）
             float distance = AMapUtils.calculateLineDistance(new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude()), new LatLng(info.getLatitude(), info.getLongitude()));
             //在范围内，签到，toast成功
-            if("一键签到".equals(btnSign.getText().toString())){
+            if ("一键签到".equals(btnSign.getText().toString())) {
                 if (statusInfoFull.getStatusInfo().getSignInIdentity().equals("no")) {
                     if (distance <= info.getRadius()) {
                         updateInfo("setSignInIdentity");
@@ -314,18 +335,18 @@ public class MapActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(MapActivity.this, "已签到", Toast.LENGTH_SHORT).show();
                 }
-            }else if ("一键签退".equals(btnSign.getText().toString())){
+            } else if ("一键签退".equals(btnSign.getText().toString())) {
                 //时间大于下班点自动签退
                 if (statusInfoFull.getStatusInfo().getsignOutIdentity().equals("no") && btnClicked) {
-                        updateInfo("setsignOutIdentity");
-                        if (statusInfoFull.getStatusInfo().getsignOutIdentity().equals("yes")) {
-                            Toast.makeText(MapActivity.this, "签退成功", Toast.LENGTH_SHORT).show();
-                            btnSign.setText("打卡完成，回家休息喽");
-                        }
+                    updateInfo("setsignOutIdentity");
+                    if (statusInfoFull.getStatusInfo().getsignOutIdentity().equals("yes")) {
+                        Toast.makeText(MapActivity.this, "签退成功", Toast.LENGTH_SHORT).show();
+                        btnSign.setText("打卡完成，回家休息喽");
+                    }
                 } else {
                     Toast.makeText(MapActivity.this, "已签退", Toast.LENGTH_SHORT).show();
                 }
-            }else{
+            } else {
                 Toast.makeText(MapActivity.this, "快回家吃饭吧", Toast.LENGTH_SHORT).show();
             }
         }
@@ -357,11 +378,11 @@ public class MapActivity extends AppCompatActivity {
         switch (type) {
             case "setSignInIdentity":
                 statusInfo.setSignInIdentity("yes");
-                statusInfo.setSignInDate(dbHelper.dateToString(new Date(),Constant.timeFull));
+                statusInfo.setSignInDate(dbHelper.dateToString(new Date(), Constant.timeFull));
                 break;
             case "setsignOutIdentity":
                 statusInfo.setsignOutIdentity("yes");
-                statusInfo.setSignOutDate(dbHelper.dateToString(new Date(),Constant.timeFull));
+                statusInfo.setSignOutDate(dbHelper.dateToString(new Date(), Constant.timeFull));
                 break;
             case "signInSend":
                 statusInfo.setSignInSend(1);
@@ -369,7 +390,7 @@ public class MapActivity extends AppCompatActivity {
             case "signOutSend":
                 statusInfo.setsignOutSend(1);
                 break;
-            case "total":
+            case "review":
                 statusInfo.setSignInIdentity("no");
                 statusInfo.setsignOutIdentity("no");
                 statusInfo.setSignInSend(0);
@@ -446,7 +467,6 @@ public class MapActivity extends AppCompatActivity {
                                 if (statusInfo.getSignInSend() == 0) {
                                     showNotification(Constant.IN);
                                 }
-
                             }
                         }
                         break;
@@ -570,22 +590,22 @@ public class MapActivity extends AppCompatActivity {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                if ("yes".equals(statusInfo.getsignOutIdentity())){
+                if ("yes".equals(statusInfo.getsignOutIdentity())) {
                     timer.cancel();
-                }else{
+                } else {
                     showNotification(Constant.OUT);
-                    timer.cancel();
+                    //timer.cancel();
                 }
             }
         };
-        if ("no".equals(statusInfo.getsignOutIdentity())){
+        if ("no".equals(statusInfo.getsignOutIdentity())) {
             String timeQuantum = dbHelper.queryInfo(db, Constant.name).getTimeQuantum();
             Date date = dbHelper.stringToDate(timeQuantum, Constant.timeHour);
             long longtime = 1;
-            if (date.getHours() > 0){
+            if (date.getHours() > 0) {
                 longtime = date.getHours() * 60;
             }
-            if (date.getMinutes() > 0){
+            if (date.getMinutes() > 0) {
                 longtime = longtime * date.getMinutes() * 60 * 1000;
             }
             timer.schedule(task, longtime);
@@ -603,13 +623,13 @@ public class MapActivity extends AppCompatActivity {
         int itemId = item.getItemId();
         switch (itemId) {
             case R.id.action_location:
-                updateInfo("total");
+                updateInfo("review");
                 break;
             case android.R.id.home:
                 designDrawerView.openDrawer(GravityCompat.START);
                 break;
             case R.id.action_time_auto:
-                startActivity(new Intent(this,SettingsActivity.class));
+                startActivity(new Intent(this, SettingsActivity.class));
                 break;
         }
 
@@ -684,4 +704,25 @@ public class MapActivity extends AppCompatActivity {
         //在activity执行onSaveInstanceState时执行mMapView.onSaveInstanceState (outState)，保存地图当前的状态
         map.onSaveInstanceState(outState);
     }
+
+
+    //    /// <summary>
+    //    /// 根据输入的地点坐标计算中心点（适用于400km以下的场合）
+    //    /// </summary>
+    //    /// <param name="geoCoordinateList"></param>
+    //    /// <returns></returns>
+    //    public GeoCoordinate GetCenterPointFromListOfCoordinates(List<GeoCoordinate> geoCoordinateList)
+    //    {
+    //        //以下为简化方法（400km以内）
+    //        int total = geoCoordinateList.Count;
+    //        double lat = 0, lon = 0;
+    //        foreach (GeoCoordinate g in geoCoordinateList)
+    //        {
+    //            lat += g.Latitude * Math.PI / 180;
+    //            lon += g.Longitude * Math.PI / 180;
+    //        }
+    //        lat /= total;
+    //        lon /= total;
+    //        return new GeoCoordinate(lat * 180 / Math.PI, lon * 180 / Math.PI);
+
 }

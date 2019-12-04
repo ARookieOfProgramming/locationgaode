@@ -16,14 +16,7 @@
         android:id="@+id/nav_view_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="25dp"
-        android:text="姓名：zhouzhou" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="25dp"
-        android:text="邮箱：1812276498@qq.com" />
+        android:textSize="25dp" />
 
 
 </LinearLayout>

@@ -22,11 +22,7 @@ import com.zhouzhou.locationgaode.DBHelper;
 import com.zhouzhou.locationgaode.R;
 import com.zhouzhou.locationgaode.bean.Constant;
 import com.zhouzhou.locationgaode.bean.SignTableInfo;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalTime;
-import java.util.Date;
+import com.zhouzhou.locationgaode.service.MyService;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -107,7 +103,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     @OnClick(R.id.ll_setting_center)
     public void onLlSettingCenterClicked() {
-        String[] choices = {"手动输入", "地图标点"};
+        String[] choices = {"手动输入", "地图标点", "自动检测"};
         new AlertDialog.Builder(this).setTitle("请选择设置方式").setSingleChoiceItems(choices, 0, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -115,10 +111,12 @@ public class SettingsActivity extends AppCompatActivity {
                     dialog.dismiss();
                     dialoglatlng();
                 }
-                if (which == 1) {
+                else if (which == 1) {
                     //跳转到地图去标点，标完点回来
                     startActivityForResult(new Intent(SettingsActivity.this,SettingPointMapActivity.class).putExtra("radius",tvSettingRadius.getText().toString()),requestCode);
                     dialog.dismiss();
+                }else if (which == 2){
+                    //startService(new Intent(SettingsActivity.this,MyService.class));
                 }
             }
         }).create().show();
